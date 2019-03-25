@@ -31,7 +31,7 @@ This project mainly contains two executable program:
   * home
   * dev
 
-  ![directory structure]("img/directory+structure.jpg")
+  ![directory structure]("img/directory structure.jpg")
 
 * `secondFS`
 

@@ -22,7 +22,7 @@ This project mainly contains two executable program:
   * Inode Space
   * Data Space
 
-  ![Disk structure](img\disk structure.jpg)
+  ![Disk structure](img/disk structure.jpg)
 
   After format `myDisk.img`，it will contain a root directory and four sub directory
 
@@ -31,7 +31,7 @@ This project mainly contains two executable program:
   * home
   * dev
 
-  ![directory structure](img\directory structure.jpg)
+  ![directory structure](img/directory structure.jpg)
 
 * `secondFS`
 

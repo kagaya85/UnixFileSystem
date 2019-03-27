@@ -9,20 +9,19 @@
  */
 
 #include "format.h"
-#include <iostream>
 
 using namespace std;
 
 int main()
 {
-    int diskSize = MIN_DISK_SIZE;
+    int diskSize = FileSystem::MIN_DISK_SIZE;
     while (true)
     {
-        cout << "Please Input Disk Size (BYTE default "<< MIN_DISK_SIZE <<" Bytes):";
+        cout << "Please Input Disk Block Number (default "<< MIN_DISK_SIZE <<" x 512 Bytes):";
         if(cin.peek() != '\n')
             cin >> diskSize;
         if(diskSize < MIN_DISK_SIZE)
-            cout << "Disk size at least 4096 Bytes!!!" << endl;
+            cout << "Disk size at least 4096 x 512 Bytes!!!" << endl;
         else
             break;        
     }
@@ -31,6 +30,7 @@ int main()
     Format Disk(diskSize);
 
     Disk.InitSuperBolck();
+    Disk.InitBitmap();
     Disk.InitDiskInode();
     Disk.InitData();
 

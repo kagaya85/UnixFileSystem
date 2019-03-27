@@ -37,29 +37,6 @@ public:
 
 
 /*
- * 文件系统装配块(Mount)的定义。
- * 装配块用于实现子文件系统与
- * 根文件系统的连接。
- */
-class Mount
-{
-	/* Functions */
-public:
-	/* Constructors */
-	Mount();
-	/* Destructors */
-	~Mount();
-	
-	/* Members */
-public:
-	short 		m_dev;		/* 文件系统设备号 */
-	SuperBlock* m_spb;		/* 指向文件系统的Super Block对象在内存中的副本 */
-	Inode*		m_inodep;	/* 指向挂载子文件系统的内存INode */
-};
-
-
-
-/*
  * 文件系统类(FileSystem)管理文件存储设备中
  * 的各类存储资源，磁盘块、外存INode的分配、
  * 释放。
@@ -70,17 +47,20 @@ public:
 	/* static consts */
 	static const int NMOUNT = 5;			/* 系统中用于挂载子文件系统的装配块数量 */
 
-	static const int SUPER_BLOCK_SECTOR_NUMBER = 200;	/* 定义SuperBlock位于磁盘上的扇区号，占据200，201两个扇区。 */
+	static const int MIN_DISK_SIZE = 4096;	// 磁盘最少盘块数量
+	static const int BLOCK_SIZE = 512;	// 盘块大小 BYTE
+
+	static const int SUPER_BLOCK_SECTOR_NUMBER = 0;	/* 定义SuperBlock位于磁盘上的扇区号，占据200，201两个扇区。 */
 
 	static const int ROOTINO = 0;			/* 文件系统根目录外存Inode编号 */
 
 	static const int INODE_NUMBER_PER_SECTOR = 8;		/* 外存INode对象长度为64字节，每个磁盘块可以存放512/64 = 8个外存Inode */
-	static const int INODE_ZONE_START_SECTOR = 202;		/* 外存Inode区位于磁盘上的起始扇区号 */
-	static const int INODE_ZONE_SIZE = 1024 - 202;		/* 磁盘上外存Inode区占据的扇区数 */
+	static const int INODE_ZONE_START_SECTOR = 2;		/* 外存Inode区位于磁盘上的起始扇区号 */
+	static const int INODE_ZONE_SIZE = 512 - INODE_ZONE_START_SECTOR;		/* 磁盘上外存Inode区占据的扇区数 */
 
-	static const int DATA_ZONE_START_SECTOR = 1024;		/* 数据区的起始扇区号 */
-	static const int DATA_ZONE_END_SECTOR = 18000 - 1;	/* 数据区的结束扇区号 */
-	static const int DATA_ZONE_SIZE = 18000 - DATA_ZONE_START_SECTOR;	/* 数据区占据的扇区数量 */
+	static const int DATA_ZONE_START_SECTOR = 512;		/* 数据区的起始扇区号 */
+	static const int DATA_ZONE_END_SECTOR = 4096 - 1;	/* 数据区的结束扇区号 */
+	static const int DATA_ZONE_SIZE = 4096 - DATA_ZONE_START_SECTOR;	/* 数据区占据的扇区数量 */
 
 	/* Functions */
 public:

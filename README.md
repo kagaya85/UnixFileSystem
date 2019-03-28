@@ -1,7 +1,7 @@
 # UnixFileSystem
 Using `cpp` to simulate the file system of Unix
 
-## Description
+## Overview
 
 This is my curriculum design of *Operate System*, a part of the source code is from UNIX V6++
 
@@ -12,17 +12,38 @@ This is my curriculum design of *Operate System*, a part of the source code is f
 
 ## Guide
 
-This project mainly contains two executable program:
+This project mainly has two executable program:
 
 * `format`
 
   Please use this to format `myDisk.img` into UNIX V6++ Volume:
 
   * Super Block
+
+  * Data Bitmap
+
+  * Inode Bitmap
+
   * Inode Space
+
   * Data Space
 
-  ![Disk structure](img/disk.jpg)
+    | Super Block | Data Bitmap | Inode Bitmap | Inode Space                    | Data Space    |
+    | ----------- | ----------- | ------------ | ------------------------------ | ------------- |
+    | Block 0     | Block 1     | Block 2      | Block 3 ~ (Dynamic allocation) | < (4M ~ 128M) |
+
+  **some details**
+
+  * Block Size: 4096 Bytes
+  * Data Bitmap: 1 Block → 4 * 1024 * 8 Blocks → 128 MB，so this FS contains 128MB space at **Most**
+  * Inode Bitmap: 1 Block → 4 * 1024 * 8 Inodes
+  * Inode Space: 1 Block contains 64 Inodes and every 4 Blocks will allocate a Inode, so every megabyte of data will allocate a block of Inodes
+  * Data Space: Rest of the Space 
+  * Disk Size: 4096 Blocks (16M) at **Least** and 134217728 Blocks (128M) at **Most**
+
+  
+
+  **then**
 
   After format `myDisk.img`，it will contain a root directory and four sub directory
 

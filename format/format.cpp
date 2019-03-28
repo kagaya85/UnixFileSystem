@@ -14,13 +14,14 @@ using namespace std;
 
 int main()
 {
-    int diskSize = FileSystem::MIN_DISK_SIZE;
+    /* 盘块数量限制为4096~134217728，对于磁盘大小为16M~128M */
+    int diskSize = FileSystem::MIN_DISK_SIZE;   
     while (true)
     {
-        cout << "Please Input Disk Block Number (default "<< MIN_DISK_SIZE <<" x 512 Bytes):";
+        cout << "Please Input Disk Block Number (default "<< FileSystem::MIN_DISK_SIZE <<" x 512 Bytes):";
         if(cin.peek() != '\n')
             cin >> diskSize;
-        if(diskSize < MIN_DISK_SIZE)
+        if(diskSize < FileSystem::MIN_DISK_SIZE)
             cout << "Disk size at least 4096 x 512 Bytes!!!" << endl;
         else
             break;        

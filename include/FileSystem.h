@@ -3,6 +3,15 @@
 
 #include "INode.h"
 
+/* 
+ * 目录项结构体 32 Bytes 
+ */
+struct DirItem 
+{
+	char name[28];	// 文件名
+	int inode_num;	// inode号
+};
+
 /*
  * 文件系统存储资源管理块(Super Block)的定义。
  */

@@ -5,8 +5,8 @@ Using `cpp` to simulate the file system of Unix
 
 This is my curriculum design of *Operate System*, a part of the source code is from UNIX V6++
 
-* Develop Environment: Ubuntu 18.04.2 LTS on Windows 10 x86_64
-* Contribute a simple file system includes FS structure and basic FS operations
+* Develop Environment: WSL Ubuntu 18.04.2 LTS on Windows 10 x86_64
+* Contribute a simple file system includes FS structure and basical FS operations
 * Using a IMG file to imitate the hard driver
 * Code for Learning
 
@@ -32,7 +32,7 @@ This project mainly has two executable program:
     | ----------- | ----------- | ------------ | ------------------------------ | ------------- |
     | Block 0     | Block 1     | Block 2      | Block 3 ~ (Dynamic allocation) | < (4M ~ 128M) |
 
-  **some details**
+  **Some details**
 
   * Block Size: 4096 Bytes
   * Data Bitmap: 1 Block → 4 * 1024 * 8 Blocks → 128 MB，so this FS contains 128MB space at **Most**
@@ -43,7 +43,7 @@ This project mainly has two executable program:
 
   
 
-  **then**
+  **Then**
 
   After format `myDisk.img`，it will contain a root directory and four sub directory
 

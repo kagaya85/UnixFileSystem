@@ -99,30 +99,23 @@ void Format::InitSuperBolck()
 
 }
 
+/* 
+ * 分配初始Inode Bitmap
+ * 包含根目录root以及4个子目录
+ * 每个目录分别占用1个inode
+ * 0号inode空白
+ * 共需5+1个inode, 5个数据块存放目录文件
+ */
+
 void Format::InitBitmap()
 {
-    /* 分配初始Inode Bitmap
-     * 包含根目录root以及4个子目录
-     * 每个目录分别占用1个inode
-     * 0号inode空白
-     * 共需5+1个inode, 5个数据块存放目录文件
-     */
     char ione[2] = {0xFC, 0x00}; // inodemap预分配6bit
     char done[2] = {0xF8, 0x00}; // datamap预分配5bit
     char zero[4094] = {0};
     
     // lseek(f_fd, FileSystem::BLOCK_SIZE, SEEK_SET);
 
-    // bitmap 清零 
-    if(write(f_fd, &ione, sizeof(ione)) < sizeof(ione))
-    {
-        perror("Bitmap init 1 error");
-    }
-    if(write(f_fd, zero, sizeof(zero)) < sizeof(zero))
-    {
-        perror("Bitmap init 2 error");
-    }
-
+    // inode bitmap
     if(write(f_fd, &done, sizeof(done)) < sizeof(done))
     {
         perror("Bitmap init 3 error");
@@ -130,6 +123,16 @@ void Format::InitBitmap()
     if(write(f_fd, zero, sizeof(zero)) < sizeof(zero))
     {
         perror("Bitmap init 4 error");
+    }
+
+    // data bitmap 
+    if(write(f_fd, &ione, sizeof(ione)) < sizeof(ione))
+    {
+        perror("Bitmap init 1 error");
+    }
+    if(write(f_fd, zero, sizeof(zero)) < sizeof(zero))
+    {
+        perror("Bitmap init 2 error");
     }
 
 }
@@ -141,15 +144,11 @@ void Format::InitDiskInode()
     
     /* 初始配置 */
     inode.d_mode = Inode::IRWXU | Inode::IFDIR;
-
     inode.d_nlink = 0;
-
     inode.d_uid = 0;
     inode.d_gid = 0;
-
     inode.d_atime = 0;  
     inode.d_mtime = 0;
-
     inode.d_size = 0;   // 目录文件的size指目录下所有文件的总大小？
 
 
@@ -174,9 +173,9 @@ void Format::InitDiskInode()
 
 void Format::InitData()
 {
-    // 对0 ~ 4号盘块写入目录文件
-    // datazone 初始盘块
-    int base_offset = 2 + f_izone_size;
+    // 对0 ~ 4号数据盘块写入目录文件
+    // datazone 初始盘块号
+    int base_offset = 3 + f_izone_size; // 3 (superblock databitmap inodebitmap) + inode区盘块数量
     DirItem root[6] = {
         {".", 1},
         {"..", 1},
@@ -187,11 +186,12 @@ void Format::InitData()
     };
 
     DirItem sub_dir[2] = {
-        {".", 2},
-        {"..", 1}
+        {".", 0},   // 当前目录inode默认无效
+        {"..", 1}   // 上级目录均为root
     };
 
-    lseek(f_fd, (base_offset + 1) * FileSystem::BLOCK_SIZE, SEEK_SET);
+    // 写入root目录文件
+    lseek(f_fd, base_offset * FileSystem::BLOCK_SIZE, SEEK_SET);
     if(write(f_fd, &root, sizeof(root)) < sizeof(root))
     {
         perror("root dir block write error");
@@ -199,8 +199,8 @@ void Format::InitData()
 
     for(int i = 2; i <= 5; i++)
     {
-        lseek(f_fd, (base_offset + i) * FileSystem::BLOCK_SIZE, SEEK_SET);
-        sub_dir[1].inode_num = i;   // 子目录的当前inode号
+        lseek(f_fd, (base_offset + i - 1) * FileSystem::BLOCK_SIZE, SEEK_SET);
+        sub_dir[0].inode_num = i;   // 子目录的当前inode号
         if(write(f_fd, &sub_dir, sizeof(sub_dir)) < sizeof(sub_dir))
         {
             perror("sub_dir block write error");

@@ -9,6 +9,7 @@
  */
 
 #include "format.h"
+#include <iostream>
 
 using namespace std;
 

@@ -81,11 +81,32 @@ public:
 private:
 
 public:
-	// Mount m_Mount[NMOUNT];		/* 文件系统装配块表，Mount[0]用于根文件系统 */
+	Mount m_Mount[NMOUNT];		/* 文件系统装配块表，Mount[0]用于根文件系统 */
 
 private:
 	int updlock;				/* Update()函数的锁，该函数用于同步内存各个SuperBlock副本以及，
 								被修改过的内存Inode。任一时刻只允许一个进程调用该函数 */
+};
+
+/*
+ * 文件系统装配块(Mount)的定义。
+ * 装配块用于实现子文件系统与
+ * 根文件系统的连接。
+ */
+class Mount
+{
+	/* Functions */
+public:
+	/* Constructors */
+	Mount();
+	/* Destructors */
+	~Mount();
+	
+	/* Members */
+public:
+	short 		m_dev;		/* 文件系统设备号 */
+	SuperBlock* m_spb;		/* 指向文件系统的Super Block对象在内存中的副本 */
+	Inode*		m_inodep;	/* 指向挂载子文件系统的内存INode */
 };
 
 #endif

@@ -1,10 +1,6 @@
 #include "FileSystem.h"
-#include "Utility.h"
 #include "New.h"
-#include "Kernel.h"
 #include "OpenFileManager.h"
-#include "TimeInterrupt.h"
-#include "Video.h"
 
 /*==============================class SuperBlock===================================*/
 /* 系统全局超级块SuperBlock对象 */
@@ -18,6 +14,26 @@ SuperBlock::SuperBlock()
 SuperBlock::~SuperBlock()
 {
 	//nothing to do here
+}
+
+/*==============================class Mount===================================*/
+Mount::Mount()
+{
+	this->m_dev = -1;
+	this->m_spb = NULL;
+	this->m_inodep = NULL;
+}
+
+Mount::~Mount()
+{
+	this->m_dev = -1;
+	this->m_inodep = NULL;
+	//释放内存SuperBlock副本
+	if(this->m_spb != NULL)
+	{
+		delete this->m_spb;
+		this->m_spb = NULL;
+	}
 }
 
 
@@ -95,7 +111,7 @@ SuperBlock* FileSystem::GetFS(short dev)
 void FileSystem::Update()
 {
 	int i;
-	SuperBlock* sb;
+	SuperBlock* spb;
 	Buf* pBuf;
 
 	/* 另一进程正在进行同步，则直接返回 */

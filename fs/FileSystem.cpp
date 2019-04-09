@@ -1,20 +1,12 @@
 #include "FileSystem.h"
+#include "Kernel.h"
 #include "New.h"
-#include "OpenFileManager.h"
+// #include "OpenFileManager.h"
+#include "BufferManager.h"
 
 /*==============================class SuperBlock===================================*/
 /* 系统全局超级块SuperBlock对象 */
 SuperBlock g_spb;
-
-SuperBlock::SuperBlock()
-{
-	//nothing to do here
-}
-
-SuperBlock::~SuperBlock()
-{
-	//nothing to do here
-}
 
 /*==============================class Mount===================================*/
 Mount::Mount()
@@ -56,20 +48,14 @@ void FileSystem::Initialize()
 
 void FileSystem::LoadSuperBlock()
 {
-	User& u = Kernel::Instance().GetUser();
+	// User& u = Kernel::Instance().GetUser();
 	BufferManager& bufMgr = Kernel::Instance().GetBufferManager();
-	Buf* pBuf;
 
-	for (int i = 0; i < 2; i++)
-	{
-		int* p = (int *)&g_spb + i * 128;
+	// 一次性从block0读入1024Bytes到g_spb
+	// pBuf = bufMgr.Bread(DeviceManager::ROOTDEV, FileSystem::SUPER_BLOCK_SECTOR_NUMBER + i);
 
-		pBuf = bufMgr.Bread(DeviceManager::ROOTDEV, FileSystem::SUPER_BLOCK_SECTOR_NUMBER + i);
+	Utility::DWordCopy((int *)pBuf->b_addr, p, 128);
 
-		Utility::DWordCopy((int *)pBuf->b_addr, p, 128);
-
-		bufMgr.Brelse(pBuf);
-	}
 	if (User::NOERROR != u.u_error)
 	{
 		Utility::Panic("Load SuperBlock Error....!\n");

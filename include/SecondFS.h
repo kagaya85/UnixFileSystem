@@ -33,7 +33,6 @@ public:
         Mkdir
     };
 private:
-    SuperBlock spBlocks[2];
     Inode inodes[128];
     Inode* currentDirI;
     /*  定义内存Inode表的实例 */

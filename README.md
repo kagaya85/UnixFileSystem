@@ -35,6 +35,7 @@ This project mainly has two executable program:
   **Some details**
 
   * Block Size: 4096 Bytes
+  * Super Block: 1024 Bytes
   * Data Bitmap: 1 Block → 4 * 1024 * 8 Blocks → 128 MB，so this FS contains 128MB space at **Most**
   * Inode Bitmap: 1 Block → 4 * 1024 * 8 Inodes
   * Inode Space: 1 Block contains 64 Inodes and every 4 Blocks will allocate a Inode, so every megabyte of data will allocate a block of Inodes
@@ -68,3 +69,26 @@ This project mainly has two executable program:
   * close
   * mkdir
   * others...
+
+# Structure
+
+* dev 磁盘读写相关
+  * `BufferManager` buffer管理
+  * `DiskDriver` 最基本的磁盘读写操作
+* fs 文件系统
+  * `FileManager` 文件系统一些指令的调用实现
+  * `FileSystem` 文件系统的初始化，管理文件存储设备中的各类存储资源，磁盘块、外存`INode`的分配、释放。
+  * `Inode` `Inode`相关
+  * `SecondFS` 实现shell窗口
+  * `SuperBlock` 超级块相关
+
+* Kernel
+  * Kernel 通过kernel类中的静态变量来对一些全局对象、变量进行管理
+
+> fs暂时的实现想法：
+>
+> 在kernel中实例化各个类
+>
+> 有关磁盘读写的操作（文件读写）一律在DiskDriver中实现
+>
+> 先不通过缓存读写，先实现直接读写文件

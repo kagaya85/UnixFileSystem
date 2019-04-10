@@ -11,8 +11,6 @@
 #include "SecondFS.h"
 #include <iostream>
 #include <string>
-#include <io.h>
-#include <stdlib.h>
 
 using namespace std;
 
@@ -20,12 +18,6 @@ int main()
 {
     int inum;   // 指令序号
     SecondFS fs;
-    if(fs.readDisk(DISK_FILE_NAME) == Error)
-    {
-        cout << "File <" << DISK_FILE_NAME << "> does not exit" << endl;
-        exit(-1);
-    }
-
 
     while(true)
     {
@@ -40,15 +32,6 @@ int main()
                 break;
         }
     } 
-}
-/*
- * 读取磁盘文件
- */
-int SecondFS::readDisk(const char* const filename)
-{
-    if(access(filename, 0) < 0)
-        return Error; 
-    
 }
 
 /*

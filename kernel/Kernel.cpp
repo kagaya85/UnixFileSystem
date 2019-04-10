@@ -1,16 +1,9 @@
 #include "Kernel.h"
 
+
 Kernel Kernel::instance;
-
-/*
- * 设备管理、高速缓存管理全局manager
- */
+DiskDriver g_DiskDriver;
 BufferManager g_BufferManager;
-DeviceManager g_DeviceManager;
-
-/*
- * 文件系统相关全局manager
- */
 FileSystem g_FileSystem;
 FileManager g_FileManager;
 
@@ -30,14 +23,14 @@ Kernel& Kernel::Instance()
 void Kernel::InitBuffer()
 {
 	this->m_BufferManager = &g_BufferManager;
-	this->m_DeviceManager = &g_DeviceManager;
+	this->m_DiskDriver = &g_DiskDriver;
 
 	Diagnose::Write("Initialize Buffer...");
 	this->GetBufferManager().Initialize();
 	Diagnose::Write("OK.\n");
 
-	Diagnose::Write("Initialize Device Manager...");
-	this->GetDeviceManager().Initialize();
+	Diagnose::Write("Initialize Device Driver...");
+	this->GetDiskDriver().Initialize();
 	Diagnose::Write("OK.\n");
 }
 
@@ -81,10 +74,7 @@ FileManager& Kernel::GetFileManager()
 	return *(this->m_FileManager);
 }
 
-int Kernel::GetDiskfileFd(){
-	return DiskfileFd;
-}
-
-void Kernel::SetDiskfileFd(int fd){
-	DiskfileFd = fd;
+DiskDriver& GetDiskDriver()
+{
+	return *(this->m_DiskDriver);
 }

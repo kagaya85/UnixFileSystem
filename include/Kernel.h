@@ -1,15 +1,9 @@
 #ifndef KERNEL_H
 #define KERNEL_H
 
-// #include "PageManager.h"
-// #include "ProcessManager.h"
-// #include "KernelAllocator.h"
-// #include "User.h"
 #include "BufferManager.h"
-// #include "DeviceManager.h"
-// #include "FileManager.h"
 #include "FileSystem.h"
-// #include "SwapperManager.h"
+#include "DiskDriver.h"
 
 /*
  * Kernel类用于封装所有内核相关的全局类实例对象，
@@ -30,36 +24,23 @@ public:
 	static Kernel& Instance();
 	void Initialize();		/* 该函数完成初始化内核大部分数据结构的初始化 */
 
-	// KernelPageManager& GetKernelPageManager();
-	// UserPageManager& GetUserPageManager();
-	// ProcessManager& GetProcessManager();
-	// KernelAllocator& GetKernelAllocator();
-	// SwapperManager& GetSwapperManager();
 	BufferManager& GetBufferManager();
-	// DeviceManager& GetDeviceManager();
 	FileSystem& GetFileSystem();
 	FileManager& GetFileManager();
-	int GetDiskfileFd();
-	// User& GetUser();		/* 获取当前进程的User结构 */
+	DiskDriver& GetDiskDriver();
 
 private:
 	void InitMemory();
-	// void InitProcess();
 	void InitBuffer();
 	void InitFileSystem();
 
 private:
 	static Kernel instance;		/* Kernel单体类实例 */
 	static int DiskfileFd;	// 磁盘文件号
-	// KernelPageManager* m_KernelPageManager;
-	// UserPageManager* m_UserPageManager;
-	// ProcessManager* m_ProcessManager;
-	// KernelAllocator* m_KernelAllocator;
-	// SwapperManager* m_SwapperManager;
 	BufferManager* m_BufferManager;
-	// DeviceManager* m_DeviceManager;
 	FileSystem* m_FileSystem;
 	FileManager* m_FileManager;
+	DiskDriver* m_DiskDriver;
 };
 
 #endif

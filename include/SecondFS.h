@@ -8,17 +8,15 @@
  * Modified By: kagaya (kagaya85@outlook.com>)
  */
 
-/*
- * 实现命令行窗口对myDisk.img文件进行基本文件操作
- * 实现基本的系统调用
- */
+
 #ifndef SECOND
 #define SECOND
 #include "FileSystem.h"
+#include "Defines.h"
 
-#define Error -1
-#define DISK_FILE_NAME "myDisk.img"
-
+/**
+ * Shell的实现
+ */
 class SecondFS
 {
 public:
@@ -41,7 +39,6 @@ public:
     SecondFS();
     ~SecondFS();
 
-    int readDisk(const char* const filename);
     int prompt();
     
     /* command */

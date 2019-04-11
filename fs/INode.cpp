@@ -49,7 +49,6 @@ void Inode::ReadI()
 	int nbytes;	/* 传送至用户目标区字节数量 */
 	short dev;
 	Buf* pBuf;
-	User& u = Kernel::Instance().GetUser();
 	BufferManager& bufMgr = Kernel::Instance().GetBufferManager();
 	DeviceManager& devMgr = Kernel::Instance().GetDeviceManager();
 
@@ -62,13 +61,11 @@ void Inode::ReadI()
 	this->i_flag |= Inode::IACC;
 
 	/* 如果是字符设备文件 ，调用外设读函数*/
-	if( (this->i_mode & Inode::IFMT) == Inode::IFCHR )
-	{
-		short major = Utility::GetMajor(this->i_addr[0]);
-
-		devMgr.GetCharDevice(major).Read(this->i_addr[0]);
-		return;
-	}
+	// if( (this->i_mode & Inode::IFMT) == Inode::IFCHR )
+	// {
+	// 	devMgr.GetCharDevice(major).Read(this->i_addr[0]);
+	// 	return;
+	// }
 
 	/* 一次一个字符块地读入所需全部数据，直至遇到文件尾 */
 	while( User::NOERROR == u.u_error && u.u_IOParam.m_Count != 0)

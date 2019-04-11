@@ -42,9 +42,9 @@ public:
 	
 	static const int BLOCK_SIZE = 4096;		/* 文件逻辑块大小: 4096字节 */
 	// static const int ADDRESS_PER_INDEX_BLOCK = BLOCK_SIZE / sizeof(int);	/* 每个间接索引表(或索引块)包含的物理盘块号 */
-	// static const int SMALL_FILE_BLOCK = 6;	/* 小型文件：直接索引表最多可寻址的逻辑块号 */
-	// static const int LARGE_FILE_BLOCK = 128 * 2 + 6;	/* 大型文件：经一次间接索引表最多可寻址的逻辑块号 */
-	// static const int HUGE_FILE_BLOCK = 128 * 128 * 2 + 128 * 2 + 6;	/* 巨型文件：经二次间接索引最大可寻址文件逻辑块号 */
+	static const int SMALL_FILE_BLOCK = 6;	/* 小型文件：直接索引表最多可寻址的逻辑块号 */
+	static const int LARGE_FILE_BLOCK = 128 * 2 + 6;	/* 大型文件：经一次间接索引表最多可寻址的逻辑块号 */
+	static const int HUGE_FILE_BLOCK = 128 * 128 * 2 + 128 * 2 + 6;	/* 巨型文件：经二次间接索引最大可寻址文件逻辑块号 */
 
 	// static const int PIPSIZ = SMALL_FILE_BLOCK * BLOCK_SIZE;
 
@@ -60,7 +60,68 @@ public:
 	Inode();
 	/* Destructors */
 	~Inode();
+	/* 
+	 * @comment 根据Inode对象中的物理磁盘块索引表，读取相应
+	 * 的文件数据
+	 */
+	void ReadI();
+	/* 
+	 * @comment 根据Inode对象中的物理磁盘块索引表，将数据写入文件
+	 */
+	void WriteI();
+	/* 
+	 * @comment 将文件的逻辑块号转换成对应的物理盘块号
+	 */
+	int Bmap(int lbn);
 	
+	/* 
+	 * @comment 对特殊字符设备、块设备文件，调用该设备注册在块设备开关表
+	 * 中的设备初始化程序
+	 */
+	void OpenI(int mode);
+	/* 
+	 * @comment 对特殊字符设备、块设备文件。如果对该设备的引用计数为0，
+	 * 则调用该设备的关闭程序
+	 */
+	void CloseI(int mode);
+	
+	/* 
+	 * @comment 更新外存Inode的最后的访问时间、修改时间
+	 */
+	void IUpdate(int time);
+	/* 
+	 * @comment 释放Inode对应文件占用的磁盘块
+	 */
+	void ITrunc();
+
+	/* 
+	 * @comment 对Pipe或者Inode解锁，并且唤醒因等待锁而睡眠的进程
+	 */
+	void Prele();
+
+	/* 
+	 * @comment 对Pipe上锁，如果Pipe已经被上锁，则增设IWANT标志并睡眠等待直至解锁
+	 */
+	void Plock();
+
+	/*
+	 * @comment 对Pipe或者Inode解锁，并且唤醒因等待锁而睡眠的进程
+	 */
+	void NFrele();
+
+	/*
+	 * @comment 对Pipe上锁，如果Pipe已经被上锁，则增设IWANT标志并睡眠等待直至解锁
+	 */
+	void NFlock();
+
+	/* 
+	 * @comment 清空Inode对象中的数据
+	 */
+	void Clean();
+	/* 
+	 * @comment 将包含外存Inode字符块中信息拷贝到内存Inode中
+	 */
+	void ICopy(Buf* bp, int inumber);
 	/* Members */
 public:
 	unsigned int i_flag;	/* 状态的标志位，定义见enum INodeFlag */

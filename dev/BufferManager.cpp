@@ -200,12 +200,11 @@ void BufferManager::Bwrite(Buf *bp)
 	bp->b_flags &= ~(Buf::B_READ | Buf::B_DONE | Buf::B_ERROR | Buf::B_DELWRI);
 	bp->b_wcount = BufferManager::BUFFER_SIZE;		/* 512字节 */
 
-	this->m_DeviceManager->GetBlockDevice(Utility::GetMajor(bp->b_dev)).Strategy(bp);
+	this->m_DiskDriver->WriteToDisk(bp);
 
 	if( (flags & Buf::B_ASYNC) == 0 )
 	{
 		/* 同步写，需要等待I/O操作结束 */
-		this->IOWait(bp);
 		this->Brelse(bp);
 	}
 	else if( (flags & Buf::B_DELWRI) == 0)
@@ -245,7 +244,6 @@ void BufferManager::Bflush(short dev)
 	 * 操作bfreelist队列的时候出现错误。
 	 */
 loop:
-	X86Assembly::CLI();
 	for(bp = this->bFreeList.av_forw; bp != &(this->bFreeList); bp = bp->av_forw)
 	{
 		/* 找出自由队列中所有延迟写的块 */
@@ -257,74 +255,26 @@ loop:
 			goto loop;
 		}
 	}
-	X86Assembly::STI();
 	return;
 }
 
-bool BufferManager::Swap(int blkno, unsigned long addr, int count, enum Buf::BufFlag flag)
-{
-	User& u = Kernel::Instance().GetUser();
-
-	X86Assembly::CLI();
-
-	/* swbuf正在被其它进程使用，则睡眠等待 */
-	while ( this->SwBuf.b_flags & Buf::B_BUSY )
-	{
-		this->SwBuf.b_flags |= Buf::B_WANTED;
-		u.u_procp->Sleep((unsigned long)&SwBuf, ProcessManager::PSWP);
-	}
-
-	this->SwBuf.b_flags = Buf::B_BUSY | flag;
-	this->SwBuf.b_dev = DeviceManager::ROOTDEV;
-	this->SwBuf.b_wcount = count;
-	this->SwBuf.b_blkno = blkno;
-	/* b_addr指向要传输部分的内存首地址 */
-	this->SwBuf.b_addr = (unsigned char *)addr;
-	this->m_DeviceManager->GetBlockDevice(Utility::GetMajor(this->SwBuf.b_dev)).Strategy(&this->SwBuf);
-
-	/* 关中断进行B_DONE标志的检查 */
-	X86Assembly::CLI();
-	/* 这里Sleep()等同于同步I/O中IOWait()的效果 */
-	while ( (this->SwBuf.b_flags & Buf::B_DONE) == 0 )
-	{
-		u.u_procp->Sleep((unsigned long)&SwBuf, ProcessManager::PSWP);
-	}
-
-	/* 这里Wakeup()等同于Brelse()的效果 */
-	if ( this->SwBuf.b_flags & Buf::B_WANTED )
-	{
-		Kernel::Instance().GetProcessManager().WakeUpAll((unsigned long)&SwBuf);
-	}
-	X86Assembly::STI();
-	this->SwBuf.b_flags &= ~(Buf::B_BUSY | Buf::B_WANTED);
-
-	if ( this->SwBuf.b_flags & Buf::B_ERROR )
-	{
-		return false;
-	}
-	return true;
-}
 
 void BufferManager::GetError(Buf* bp)
 {
-	User& u = Kernel::Instance().GetUser();
-
 	if (bp->b_flags & Buf::B_ERROR)
 	{
-		u.u_error = User::EIO;
+		cerr << "Get error!" << endl;
 	}
 	return;
 }
 
 void BufferManager::NotAvail(Buf *bp)
 {
-	X86Assembly::CLI();		/* spl6();  UNIX V6的做法 */
 	/* 从自由队列中取出 */
 	bp->av_back->av_forw = bp->av_forw;
 	bp->av_forw->av_back = bp->av_back;
 	/* 设置B_BUSY标志 */
 	bp->b_flags |= Buf::B_BUSY;
-	X86Assembly::STI();
 	return;
 }
 
@@ -332,20 +282,14 @@ Buf* BufferManager::InCore(short adev, int blkno)
 {
 	Buf* bp;
 	Devtab* dp;
-	short major = Utility::GetMajor(adev);
 
-	dp = this->m_DeviceManager->GetBlockDevice(major).d_tab;
+	dp = this->m_DiskDriver.d_tab;
 	for(bp = dp->b_forw; bp != (Buf *)dp; bp = bp->b_forw)
 	{
 		if(bp->b_blkno == blkno && bp->b_dev == adev)
 			return bp;
 	}
 	return NULL;
-}
-
-Buf& BufferManager::GetSwapBuf()
-{
-	return this->SwBuf;
 }
 
 Buf& BufferManager::GetBFreeList()

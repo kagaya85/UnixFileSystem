@@ -28,11 +28,11 @@ public:
 
 	void ClrBuf(Buf* bp);				/* 清空缓冲区内容 */
 	void Bflush(short dev);				/* 将dev指定设备队列中延迟写的缓存全部输出到磁盘 */
-	bool Swap(int blkno, unsigned long addr, int count, enum Buf::BufFlag flag);
+	// bool Swap(int blkno, unsigned long addr, int count, enum Buf::BufFlag flag);
 										/* Swap I/O 用于进程图像在内存和盘交换区之间传输
 										 * blkno: 交换区中盘块号；addr:  进程图像(传送部分)内存起始地址；
 										 * count: 进行传输字节数，byte为单位；传输方向flag: 内存->交换区 or 交换区->内存。 */
-	Buf& GetSwapBuf();					/* 获取进程图像传送请求块Buf对象引用 */
+	// Buf& GetSwapBuf();					/* 获取进程图像传送请求块Buf对象引用 */
 	Buf& GetBFreeList();				/* 获取自由缓存队列控制块Buf对象引用 */
 
 private:
@@ -45,7 +45,7 @@ private:
 	Buf m_Buf[NBUF];					/* 缓存控制块数组 */
 	unsigned char Buffer[NBUF][BUFFER_SIZE];	/* 缓冲区数组 */
 	
-	DeviceDriver* m_DiskDriver;		/* 指向设备管理模块全局对象 */
+	DiskDriver* m_DiskDriver;		/* 指向设备管理模块全局对象 */
 };
 
 #endif

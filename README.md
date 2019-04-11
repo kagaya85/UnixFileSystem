@@ -92,3 +92,5 @@ This project mainly has two executable program:
 > 有关磁盘读写的操作（文件读写）一律在DiskDriver中实现
 >
 > 先不通过缓存读写，先实现直接读写文件
+>
+> 看来还是离不开user结构和（目录指针）utility结构（时间）

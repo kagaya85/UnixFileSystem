@@ -93,7 +93,7 @@ public:
 public:
 	unsigned long u_rsav[2];	/* 用于保存esp与ebp指针 */
 	unsigned long u_ssav[2];	/* 用于对esp和ebp指针的二次保护 */
-	Process* u_procp;			/* 指向该u结构对应的Process结构 */
+	// Process* u_procp;			/* 指向该u结构对应的Process结构 */
 	/* 新添加变量，用于替代原有的变量
 	 * int u_uisa[16]
 	 * int u_uisd[16]

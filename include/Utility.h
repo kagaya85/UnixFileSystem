@@ -39,17 +39,10 @@ class Utility
 public:
 	static void MemCopy(unsigned long src, unsigned long des, unsigned int count);
 	
-	static int CaluPageNeed(unsigned int memoryneed, unsigned int pagesize);
-
 	static void StringCopy(char* src, char* dst);
 
 	static int StringLength(char* pString);
 	
-	/* @comment
-	 * 用于从物理地址src copy 到物理地址des 1个byte
-	 */
-	static void CopySeg(unsigned long src, unsigned long des);
-	static void CopySeg2(unsigned long src, unsigned long des);
 	/* 提取参数dev中的主设备号major，高8比特 */
 	static short GetMajor(const short dev);
 	/* 提取参数dev中的次设备号minor，低8比特 */

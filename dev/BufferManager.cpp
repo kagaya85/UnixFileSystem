@@ -63,6 +63,7 @@ loop:
 	if(dp == NULL)
 	{
 		cerr << "Null devtab!" << endl;
+		exit(-1);
 	}
 
 	/* 首先在该设备队列中搜索是否有相应的缓存 */

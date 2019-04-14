@@ -2,8 +2,6 @@
 #define FILE_MANAGER_H
 
 #include "FileSystem.h"
-#include "OpenFileManager.h"
-#include "File.h"
 
 /* 
  * 文件管理类(FileManager)
@@ -173,7 +171,7 @@ public:
 	InodeTable* m_InodeTable;
 
 	/* 对全局对象g_OpenFileTable的引用，该对象负责打开文件表项的管理 */
-	OpenFileTable* m_OpenFileTable;
+	// OpenFileTable* m_OpenFileTable;
 };
 
 

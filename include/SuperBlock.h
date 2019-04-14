@@ -17,8 +17,8 @@ public:
 	int		s_fsize;		/* 盘块总数 */
 	
 	int		s_dstart;		/* 数据区起始盘块 */
-	int		s_ndfree;		/* 直接管理的空闲数据块块数量 */
-	int		s_ninode;		/* 直接管理的空闲外存Inode数量 */
+	int		s_ndfree;		/* 空闲数据块块数量 */
+	int		s_ninode;		/* 空闲外存Inode数量 */
 	
 	int		s_flock;		/* 封锁空闲盘块索引表标志 */
 	int		s_ilock;		/* 封锁空闲Inode表标志 */

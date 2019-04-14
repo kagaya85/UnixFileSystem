@@ -1,11 +1,6 @@
 #include "Utility.h"
 #include "Kernel.h"
 #include "User.h"
-#include "PageManager.h"
-#include "Machine.h"
-#include "MemoryDescriptor.h"
-#include "Video.h"
-#include "Assembly.h"
 
 void Utility::MemCopy(unsigned long src, unsigned long des, unsigned int count)
 {
@@ -14,14 +9,6 @@ void Utility::MemCopy(unsigned long src, unsigned long des, unsigned int count)
 	
 	for ( unsigned int i = 0; i < count; i++ ) 
 		pdes[i] = psrc[i];
-}
-
-int Utility::CaluPageNeed(unsigned int memoryneed, unsigned int pagesize)
-{
-	int pageRequired = memoryneed / pagesize;
-	pageRequired += memoryneed % pagesize ? 1 : 0;
-
-	return pageRequired;
 }
 
 void Utility::StringCopy(char* src, char* dst)
@@ -43,62 +30,6 @@ int Utility::StringLength(char* pString)
 	return length;
 }
 
-void Utility::CopySeg2(unsigned long src, unsigned long des)
-{
-	PageTableEntry* userPageTable = (PageTableEntry*)Machine::Instance().GetUserPageTableArray();
-	
-
-	/*
-	 * 先保存原用户态第一页与第二页PageTableEntry，因为下面的操作
-	 * 将会将src所在页映射到0#目录表项，des映射到1#表项，最后进行copy
-	 */
-	unsigned long oriEntry1 = userPageTable[0].m_PageBaseAddress;
-	unsigned long oriEntry2 = userPageTable[1].m_PageBaseAddress;	
-
-	userPageTable[0].m_PageBaseAddress = src / PageManager::PAGE_SIZE;
-	userPageTable[1].m_PageBaseAddress = des / PageManager::PAGE_SIZE;
-
-	unsigned char* addressSrc = (unsigned char*)(src % PageManager::PAGE_SIZE);	
-	//第二页virtual addess从4096开始
-	unsigned char* addressDes = (unsigned char*)(PageManager::PAGE_SIZE + des % PageManager::PAGE_SIZE);	
-	//需要刷新页表缓存
-	FlushPageDirectory();
-
-	*addressDes = *addressSrc;
-	
-	//恢复原页表映射
-	userPageTable[0].m_PageBaseAddress = oriEntry1;
-	userPageTable[1].m_PageBaseAddress = oriEntry2;
-	FlushPageDirectory();
-}
-
-void Utility::CopySeg(unsigned long src, unsigned long des)
-{
-	PageTableEntry* PageTable = Machine::Instance().GetKernelPageTable().m_Entrys;
-
-	/*
-	 * 先保存原用户态第一页与第二页PageTableEntry，因为下面的操作
-	 * 将会将src所在页映射到0#目录表项，des映射到1#表项，最后进行copy
-	 */
-	unsigned long oriEntry1 = PageTable[borrowedPTE].m_PageBaseAddress;
-	unsigned long oriEntry2 = PageTable[borrowedPTE + 1].m_PageBaseAddress;
-
-	PageTable[256].m_PageBaseAddress = src / PageManager::PAGE_SIZE;
-	PageTable[257].m_PageBaseAddress = des / PageManager::PAGE_SIZE;
-
-	unsigned char* addressSrc = (unsigned char*)(0xC0000000 + borrowedPTE*PageManager::PAGE_SIZE + src % PageManager::PAGE_SIZE);
-
-	unsigned char* addressDes = (unsigned char*)(0xC0000000 + (borrowedPTE + 1)*PageManager::PAGE_SIZE + des % PageManager::PAGE_SIZE);
-	//需要刷新页表缓存
-	FlushPageDirectory();
-
-	*addressDes = *addressSrc;
-
-	//恢复原页表映射
-	PageTable[borrowedPTE].m_PageBaseAddress = oriEntry1;
-	PageTable[(borrowedPTE + 1)].m_PageBaseAddress = oriEntry2;
-	FlushPageDirectory();
-}
 
 short Utility::GetMajor(const short dev)
 {
@@ -130,10 +61,9 @@ short Utility::SetMinor(short dev, const short value)
 
 void Utility::Panic(char* str)
 {
-	Diagnose::TraceOn();
-	Diagnose::Write("%s\n", str);
-	X86Assembly::CLI();
-	for(;;);
+	printf("%s\n", str);
+	cerr << "Exit" << endl;
+	exit(-1);
 }
 
 void Utility::DWordCopy(int *src, int *dst, int count)

@@ -6,6 +6,7 @@ DiskDriver g_DiskDriver;
 BufferManager g_BufferManager;
 FileSystem g_FileSystem;
 FileManager g_FileManager;
+User g_User;
 
 Kernel::Kernel()
 {
@@ -50,6 +51,7 @@ void Kernel::InitFileSystem()
 
 void Kernel::Initialize()
 {
+	this->m_User = &g_User;
 	InitBuffer();
 	InitFileSystem();
 }
@@ -74,7 +76,12 @@ FileManager& Kernel::GetFileManager()
 	return *(this->m_FileManager);
 }
 
-DiskDriver& GetDiskDriver()
+DiskDriver& Kernel::GetDiskDriver()
 {
 	return *(this->m_DiskDriver);
+}
+
+User& Kernel::GetUser()
+{
+	return *(this->m_User);
 }

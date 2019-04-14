@@ -1,6 +1,6 @@
 #ifndef INODE_H
 #define INODE_H
-
+#include "Buf.h"
 /*
  * 内存索引节点(INode)的定义
  * 系统中每一个打开的文件、当前访问目录、
@@ -41,15 +41,16 @@ public:
 	static const unsigned int IRWXO = ((IRWXU) >> 6);			/* 其他用户对文件的读、写、执行权限 */
 	
 	static const int BLOCK_SIZE = 4096;		/* 文件逻辑块大小: 4096字节 */
-	// static const int ADDRESS_PER_INDEX_BLOCK = BLOCK_SIZE / sizeof(int);	/* 每个间接索引表(或索引块)包含的物理盘块号 */
+	static const int ADDRESS_PER_INDEX_BLOCK = BLOCK_SIZE / sizeof(int);	/* 每个间接索引表(或索引块)包含的物理盘块号 */
 	static const int SMALL_FILE_BLOCK = 6;	/* 小型文件：直接索引表最多可寻址的逻辑块号 */
-	static const int LARGE_FILE_BLOCK = 128 * 2 + 6;	/* 大型文件：经一次间接索引表最多可寻址的逻辑块号 */
-	static const int HUGE_FILE_BLOCK = 128 * 128 * 2 + 128 * 2 + 6;	/* 巨型文件：经二次间接索引最大可寻址文件逻辑块号 */
+	static const int LARGE_FILE_BLOCK = 1024 * 2 + 6;	/* 大型文件：经一次间接索引表最多可寻址的逻辑块号 */
+	static const int HUGE_FILE_BLOCK = 1024 * 1024 * 2 + 1024 * 2 + 6;	/* 巨型文件：经二次间接索引最大可寻址文件逻辑块号 */
 
 	// static const int PIPSIZ = SMALL_FILE_BLOCK * BLOCK_SIZE;
 
 	/* static member */
-	static int rablock;		/* 顺序读时，使用预读技术读入文件的下一字符块，rablock记录了下一逻辑块号
+	// static int rablock;		
+							/* 顺序读时，使用预读技术读入文件的下一字符块，rablock记录了下一逻辑块号
 							经过bmap转换得到的物理盘块号。将rablock作为静态变量的原因：调用一次bmap的开销
 							对当前块和预读块的逻辑块号进行转换，bmap返回当前块的物理盘块号，并且将预读块
 							的物理盘块号保存在rablock中。 */
@@ -78,12 +79,12 @@ public:
 	 * @comment 对特殊字符设备、块设备文件，调用该设备注册在块设备开关表
 	 * 中的设备初始化程序
 	 */
-	void OpenI(int mode);
+	// void OpenI(int mode);
 	/* 
 	 * @comment 对特殊字符设备、块设备文件。如果对该设备的引用计数为0，
 	 * 则调用该设备的关闭程序
 	 */
-	void CloseI(int mode);
+	// void CloseI(int mode);
 	
 	/* 
 	 * @comment 更新外存Inode的最后的访问时间、修改时间
@@ -151,7 +152,7 @@ public:
  * 对应的控制信息。
  * 外存Inode中许多字段和内存Inode中字段
  * 相对应。外存INode对象长度为64字节，
- * 每个磁盘块可以存放512/64 = 8个外存Inode
+ * 每个磁盘块可以存放4096/64 = 64个外存Inode
  */
 class DiskInode
 {

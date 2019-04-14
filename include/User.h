@@ -1,9 +1,6 @@
 #ifndef USER_H
 #define USER_H
 
-#include "MemoryDescriptor.h"
-#include "Process.h"
-#include "File.h"
 #include "INode.h"
 #include "FileManager.h"
 
@@ -121,10 +118,10 @@ public:
 	int u_cutime;		/* 子进程用户态时间总和 */
 	int u_cstime;		/* 子进程核心态时间总和 */
 	
-	/* 信号处理相关成员 */
-	unsigned long u_signal[NSIG];	/* 信号处理表 */
-	unsigned long u_qsav[2];		/* 用于接收到信号时直接从Sleep()函数跳回至Trap() */
-	bool u_intflg;		/* 系统调用期间是否受到信号打断 ，1表示被打断、0表示未被打断*/
+	// /* 信号处理相关成员 */
+	// unsigned long u_signal[NSIG];	/* 信号处理表 */
+	// unsigned long u_qsav[2];		/* 用于接收到信号时直接从Sleep()函数跳回至Trap() */
+	// bool u_intflg;		/* 系统调用期间是否受到信号打断 ，1表示被打断、0表示未被打断*/
 	
 	/* 文件系统相关成员 */
 	Inode* u_cdir;		/* 指向当前目录的Inode指针 */

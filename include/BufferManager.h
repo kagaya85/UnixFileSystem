@@ -25,7 +25,7 @@ public:
 	Buf* Bread(short dev, int blkno);	/* 读一个磁盘块。dev为主、次设备号，blkno为目标磁盘块逻辑块号。 */
 
 	void Bwrite(Buf* bp);				/* 写一个磁盘块 */
-
+	void Bdwrite(Buf *bp)				/* 延迟写 */
 	void ClrBuf(Buf* bp);				/* 清空缓冲区内容 */
 	void Bflush(short dev);				/* 将dev指定设备队列中延迟写的缓存全部输出到磁盘 */
 	// bool Swap(int blkno, unsigned long addr, int count, enum Buf::BufFlag flag);

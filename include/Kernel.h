@@ -4,6 +4,7 @@
 #include "BufferManager.h"
 #include "FileSystem.h"
 #include "DiskDriver.h"
+#include "User.h"
 
 /*
  * Kernel类用于封装所有内核相关的全局类实例对象，
@@ -28,6 +29,7 @@ public:
 	FileSystem& GetFileSystem();
 	FileManager& GetFileManager();
 	DiskDriver& GetDiskDriver();
+	User& GetUser();
 
 private:
 	void InitMemory();
@@ -41,6 +43,7 @@ private:
 	FileSystem* m_FileSystem;
 	FileManager* m_FileManager;
 	DiskDriver* m_DiskDriver;
+	User* m_User;
 };
 
 #endif

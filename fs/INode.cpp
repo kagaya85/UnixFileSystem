@@ -2,7 +2,6 @@
 #include "Utility.h"
 #include "DeviceManager.h"
 #include "Kernel.h"
-
 /*==============================class Inode===================================*/
 /*	预读块的块号，对普通文件这是预读块所在的物理块号。对硬盘而言，这是当前物理块（扇区）的下一个物理块（扇区）*/
 int Inode::rablock = 0;
@@ -49,8 +48,9 @@ void Inode::ReadI()
 	int nbytes;	/* 传送至用户目标区字节数量 */
 	short dev;
 	Buf* pBuf;
+	User u = KErnel::Instance().GetUser();
 	BufferManager& bufMgr = Kernel::Instance().GetBufferManager();
-	DeviceManager& devMgr = Kernel::Instance().GetDeviceManager();
+	DiskDriver& dskDvr = Kernel::Instance().GetDiskDriver();
 
 	if( 0 == u.u_IOParam.m_Count )
 	{
@@ -101,12 +101,6 @@ void Inode::ReadI()
 			dev = this->i_addr[0];	/* 特殊块设备文件i_addr[0]中存放的是设备号 */
 			Inode::rablock = bn + 1;
 		}
-
-		if( this->i_lastr + 1 == lbn )	/* 如果是顺序读，则进行预读 */
-		{
-			/* 读当前块，并预读下一块 */
-			pBuf = bufMgr.Breada(dev, bn, Inode::rablock);
-		}
 		else
 		{
 			pBuf = bufMgr.Bread(dev, bn);
@@ -141,19 +135,20 @@ void Inode::WriteI()
 	Buf* pBuf;
 	User& u = Kernel::Instance().GetUser();
 	BufferManager& bufMgr = Kernel::Instance().GetBufferManager();
-	DeviceManager& devMgr = Kernel::Instance().GetDeviceManager();
+	DiskDriver& dskDvr = Kernel::Instance().GetDiskDriver();
+
 
 	/* 设置Inode被访问标志位 */
 	this->i_flag |= (Inode::IACC | Inode::IUPD);
 
 	/* 对字符设备的访问 */
-	if( (this->i_mode & Inode::IFMT) == Inode::IFCHR )
-	{
-		short major = Utility::GetMajor(this->i_addr[0]);
+	// if( (this->i_mode & Inode::IFMT) == Inode::IFCHR )
+	// {
+	// 	short major = Utility::GetMajor(this->i_addr[0]);
 
-		devMgr.GetCharDevice(major).Write(this->i_addr[0]);
-		return;
-	}
+	// 	devMgr.GetCharDevice(major).Write(this->i_addr[0]);
+	// 	return;
+	// }
 
 	if( 0 == u.u_IOParam.m_Count)
 	{
@@ -210,12 +205,10 @@ void Inode::WriteI()
 		}
 		else if( (u.u_IOParam.m_Offset % Inode::BLOCK_SIZE) == 0 )	/* 如果写满一个字符块 */
 		{
-			/* 以异步方式将字符块写入磁盘，进程不需等待I/O操作结束，可以继续往下执行 */
-			bufMgr.Bawrite(pBuf);
+			bufMgr.Bwrite(pBuf);
 		}
 		else /* 如果缓冲区未写满 */
 		{
-			/* 将缓存标记为延迟写，不急于进行I/O操作将字符块输出到磁盘上 */
 			bufMgr.Bdwrite(pBuf);
 		}
 
@@ -289,16 +282,16 @@ int Inode::Bmap(int lbn)
 			this->i_flag |= Inode::IUPD;
 		}
 		/* 找到预读块对应的物理盘块号 */
-		Inode::rablock = 0;
-		if(lbn <= 4)
-		{
-			/* 
-			 * i_addr[0] - i_addr[5]为直接索引表。如果预读块对应物理块号可以从
-			 * 直接索引表中获得，则记录在Inode::rablock中。如果需要额外的I/O开销
-			 * 读入间接索引块，就显得不太值得了。漂亮！
-			 */
-			Inode::rablock = this->i_addr[lbn + 1];
-		}
+		// Inode::rablock = 0;
+		// if(lbn <= 4)
+		// {
+		// 	/* 
+		// 	 * i_addr[0] - i_addr[5]为直接索引表。如果预读块对应物理块号可以从
+		// 	 * 直接索引表中获得，则记录在Inode::rablock中。如果需要额外的I/O开销
+		// 	 * 读入间接索引块，就显得不太值得了。漂亮！
+		// 	 */
+		// 	Inode::rablock = this->i_addr[lbn + 1];
+		// }
 
 		return phyBlkno;
 	}
@@ -306,11 +299,11 @@ int Inode::Bmap(int lbn)
 	{
 		/* 计算逻辑块号lbn对应i_addr[]中的索引 */
 
-		if(lbn < Inode::LARGE_FILE_BLOCK)	/* 大型文件: 长度介于7 - (128 * 2 + 6)个盘块之间 */
+		if(lbn < Inode::LARGE_FILE_BLOCK)	/* 大型文件: 长度介于7 - (1024 * 2 + 6)个盘块之间 */
 		{
 			index = (lbn - Inode::SMALL_FILE_BLOCK) / Inode::ADDRESS_PER_INDEX_BLOCK + 6;
 		}
-		else	/* 巨型文件: 长度介于263 - (128 * 128 * 2 + 128 * 2 + 6)个盘块之间 */
+		else	/* 巨型文件: 长度介于263 - (1024 * 1024 * 2 + 1024 * 2 + 6)个盘块之间 */
 		{
 			index = (lbn - Inode::LARGE_FILE_BLOCK) / (Inode::ADDRESS_PER_INDEX_BLOCK * Inode::ADDRESS_PER_INDEX_BLOCK) + 8;
 		}
@@ -397,84 +390,12 @@ int Inode::Bmap(int lbn)
 			bufMgr.Brelse(pFirstBuf);
 		}
 		/* 找到预读块对应的物理盘块号，如果获取预读块号需要额外的一次for间接索引块的IO，不合算，放弃 */
-		Inode::rablock = 0;
-		if( index + 1 < Inode::ADDRESS_PER_INDEX_BLOCK)
-		{
-			Inode::rablock = iTable[index + 1];
-		}
+		// Inode::rablock = 0;
+		// if( index + 1 < Inode::ADDRESS_PER_INDEX_BLOCK)
+		// {
+		// 	Inode::rablock = iTable[index + 1];
+		// }
 		return phyBlkno;
-	}
-}
-
-void Inode::OpenI(int mode)
-{
-	short dev;
-	DeviceManager& devMgr = Kernel::Instance().GetDeviceManager();
-	User& u = Kernel::Instance().GetUser();
-
-	/* 
-	 * 对于特殊块设备、字符设备文件，i_addr[]不再是
-	 * 磁盘块号索引表，addr[0]中存放了设备号dev
-	 */
-	dev = this->i_addr[0];
-
-	/* 提取主设备号 */
-	short major = Utility::GetMajor(dev);
-
-	switch( this->i_mode & Inode::IFMT)
-	{
-	case Inode::IFCHR:	/* 字符设备特殊类型文件 */
-		if (major >= devMgr.GetNChrDev())
-		{
-			u.u_error = User::ENXIO;   /* no such device */
-			return;
-		}
-		devMgr.GetCharDevice(major).Open(dev,mode);
-		break;
-
-	case Inode::IFBLK:	/* 块设备特殊类型文件 */
-		/* 检查设备号是否超出系统中块设备数量 */
-		if(major >= devMgr.GetNBlkDev())
-		{
-			u.u_error = User::ENXIO;    /* no such device */
-			return;
-		}
-		/* 根据主设备号获取对应的块设备BlockDevice对象引用 */
-		BlockDevice& bdev = devMgr.GetBlockDevice(major);
-		/* 调用该设备的特定初始化逻辑 */
-		bdev.Open(dev, mode);
-		break;
-	}
-
-	return;
-}
-
-void Inode::CloseI(int mode)
-{
-	short dev;
-	DeviceManager& devMgr = Kernel::Instance().GetDeviceManager();
-
-	/* addr[0]中存放了设备号dev */
-	dev = this->i_addr[0];
-
-	short major = Utility::GetMajor(dev);
-
-	/* 不再使用该文件,关闭特殊文件 */
-	if(this->i_count <= 1)
-	{
-		switch( this->i_mode & Inode::IFMT)
-		{
-		case Inode::IFCHR:
-			devMgr.GetCharDevice(major).Close(dev, mode);
-			break;
-
-		case Inode::IFBLK:
-			/* 根据主设备号获取对应的块设备BlockDevice对象引用 */
-			BlockDevice& bdev = devMgr.GetBlockDevice(major);
-			/* 调用该设备的特定关闭逻辑 */
-			bdev.Close(dev, mode);
-			break;
-		}
 	}
 }
 
@@ -571,8 +492,8 @@ void Inode::ITrunc()
 				/* 获取缓冲区首址 */
 				int* pFirst = (int *)pFirstBuf->b_addr;
 
-				/* 每张间接索引表记录 512/sizeof(int) = 128个磁盘块号，遍历这全部128个磁盘块 */
-				for(int j = 128 - 1; j >= 0; j--)
+				/* 每张间接索引表记录 4096/sizeof(int) = 1024个磁盘块号，遍历这全部1024个磁盘块 */
+				for(int j = 1024 - 1; j >= 0; j--)
 				{
 					if( pFirst[j] != 0)	/* 如果该项存在索引 */
 					{
@@ -585,7 +506,7 @@ void Inode::ITrunc()
 							Buf* pSecondBuf = bm.Bread(this->i_dev, pFirst[j]);
 							int* pSecond = (int *)pSecondBuf->b_addr;
 
-							for(int k = 128 - 1; k >= 0; k--)
+							for(int k = 1024 - 1; k >= 0; k--)
 							{
 								if(pSecond[k] != 0)
 								{
@@ -625,7 +546,7 @@ void Inode::NFrele()
 	if (this->i_flag & Inode::IWANT)
 	{
 		this->i_flag &= ~Inode::IWANT;
-		Kernel::Instance().GetProcessManager().WakeUpAll((unsigned long)this);
+		// Kernel::Instance().GetProcessManager().WakeUpAll((unsigned long)this);
 	}
 }
 
@@ -636,7 +557,7 @@ void Inode::NFlock()
 	while( this->i_flag & Inode::ILOCK )
 	{
 		this->i_flag |= Inode::IWANT;
-		u.u_procp->Sleep((unsigned long)this, ProcessManager::PRIBIO);
+		// u.u_procp->Sleep((unsigned long)this, ProcessManager::PRIBIO);
 	}
 	this->i_flag |= Inode::ILOCK;
 }
@@ -649,7 +570,7 @@ void Inode::Prele()
 	if (this->i_flag & Inode::IWANT)
 	{
 		this->i_flag &= ~Inode::IWANT;
-		Kernel::Instance().GetProcessManager().WakeUpAll((unsigned long)this);
+		// Kernel::Instance().GetProcessManager().WakeUpAll((unsigned long)this);
 	}
 }
 
@@ -660,7 +581,7 @@ void Inode::Plock()
 	while( this->i_flag & Inode::ILOCK )
 	{
 		this->i_flag |= Inode::IWANT;
-		u.u_procp->Sleep((unsigned long)this, ProcessManager::PPIPE);
+		// u.u_procp->Sleep((unsigned long)this, ProcessManager::PPIPE);
 	}
 	this->i_flag |= Inode::ILOCK;
 }

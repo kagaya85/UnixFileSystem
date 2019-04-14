@@ -35,7 +35,7 @@ void BufferManager::Initialize()
 		bp->b_flags = Buf::B_BUSY;
 		Brelse(bp);
 	}
-	this->m_DeviceManager = &Kernel::Instance().GetDeviceManager();
+	this->m_DiskDriver = &Kernel::Instance().GetDeviceDriver();
 	return;
 }
 
@@ -46,7 +46,6 @@ Buf* BufferManager::GetBlk(short dev, int blkno)
 {
 	Buf* bp;
 	Devtab* dp;
-
 	/* 如果主设备号超出了系统中块设备数量 */
 	// if( Utility::GetMajor(dev) >= this->m_DeviceManager->GetNBlkDev() )
 	// {
@@ -220,6 +219,13 @@ void BufferManager::Bwrite(Buf *bp)
 	return;
 }
 
+void BufferManager::Bdwrite(Buf *bp)
+{
+	/* 置上B_DONE允许其它进程使用该磁盘块内容 */
+	bp->b_flags |= (Buf::B_DELWRI | Buf::B_DONE);
+	this->Brelse(bp);
+	return;
+}
 
 void BufferManager::ClrBuf(Buf *bp)
 {
@@ -261,8 +267,11 @@ loop:
 
 void BufferManager::GetError(Buf* bp)
 {
+	User& u = Kernel::Instance().GetUser();
+	
 	if (bp->b_flags & Buf::B_ERROR)
 	{
+		u.u_error = User::EIO;
 		cerr << "Get error!" << endl;
 	}
 	return;

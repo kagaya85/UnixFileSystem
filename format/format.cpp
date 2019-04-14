@@ -109,8 +109,8 @@ void Format::InitSuperBolck()
 
 void Format::InitBitmap()
 {
-    char ione[2] = {0xFC, 0x00}; // inodemap预分配6bit
-    char done[2] = {0xF8, 0x00}; // datamap预分配5bit
+    char ione[2] = {0x00, 0x3F}; // inodemap预分配6bit
+    char done[2] = {0x00, 0x1F}; // datamap预分配5bit
     char zero[4094] = {0};
     
     // lseek(f_fd, FileSystem::BLOCK_SIZE, SEEK_SET);

@@ -13,6 +13,8 @@ Mount::Mount()
 	this->m_dev = -1;
 	this->m_spb = NULL;
 	this->m_inodep = NULL;
+	this->db_addr = NULL;
+	this->ib_addr = NULL;
 }
 
 Mount::~Mount()
@@ -24,6 +26,18 @@ Mount::~Mount()
 	{
 		delete this->m_spb;
 		this->m_spb = NULL;
+	}
+
+	if(this->db_addr != NULL)
+	{
+		delete this->db_addr;
+		this->db_addr = NULL;
+	}
+
+	if(this->ib_addr != NULL)
+	{
+		delete this->ib_addr;
+		this->ib_addr = NULL;
 	}
 }
 
@@ -333,24 +347,124 @@ Mount* FileSystem::GetMount(Inode *pInode)
 	return NULL;	/* 查找失败 */
 }
 
-void FileSystem::SaveBmp(BITMAP_TYPE bmp)
+void FileSystem::SaveBmp(int type)
 {
-
+	DiskDriver& driver = Kernel::Instance().GetDiskDriver();
+	Buf tmp;
+	if(type == DiskDriver::INODE_BITMAP_BLOCK)
+	{
+		tmp.b_addr = this->m_Mount[0].ib_addr;
+		tmp.b_blkno = DiskDriver::INODE_BITMAP_BLOCK;
+		driver.WriteToDisk(&tmp);
+	}
+	else if(type == DiskDriver::INODE_BITMAP_BLOCK)
+	{
+		tmp.b_addr = this->m_Mount[0].db_addr;
+		tmp.b_blkno = DiskDriver::DATA_BITMAP_BLOCK;
+		driver.WriteToDisk(&tmp);
+	}
+	else
+	{
+		cerr << "Bitmap save type error" << endl;
+		exit(-1);
+	}
+	
 }
 
-unsigned char* FileSystem::LoadBimap(BITMAP_TYPE bmp)
+unsigned char* FileSystem::LoadBimap(int type)
 {
-
+	DiskDriver& driver = Kernel::Instance().GetDiskDriver();
+	Buf tmp;
+	if(type == DiskDriver::INODE_BITMAP_BLOCK)
+	{
+		// inode bitmap
+		if(this->m_Mount[0].ib_addr == NULL)
+		{
+			this->m_Mount[0].ib_addr = new(nothrow) unsigned char[FileSystem::BLOCK_SIZE];
+			if(this->m_Mount[0].ib_addr == NULL)
+			{
+				cerr << "Load bitmap error" << endl;
+				exit(-1);
+			}
+		}
+		tmp.b_addr = this->m_Mount[0].ib_addr;
+		tmp.b_blkno = DiskDriver::INODE_BITMAP_BLOCK;
+		driver.ReadFromDisk(&tmp);
+	}
+	else if(type == DiskDriver::DATA_BITMAP_BLOCK)
+	{
+		// data bitmap
+		if(this->m_Mount[0].db_addr == NULL)
+		{
+			this->m_Mount[0].db_addr = new(nothrow) unsigned char[FileSystem::BLOCK_SIZE];
+			if(this->m_Mount[0].db_addr == NULL)
+			{
+				cerr << "Load bitmap error" << endl;
+				exit(-1);
+			}
+		}
+		tmp.b_addr = this->m_Mount[0].db_addr;
+		tmp.b_blkno = DiskDriver::DATA_BITMAP_BLOCK;
+		driver.ReadFromDisk(&tmp);
+	}
+	else
+	{
+		cerr << "Bitmap load type error" << endl;
+		exit(-1);
+	}
 }
 
 int AllocFreeBit(unsigned char* bitmap)
 {
+	unsigned char* p = bitmap;
+	unsigned long long* lp = (unsigned long long*)p;
 
+	int i, j;
+	for(i = 0; i < (FileSystem::BLOCK_SIZE / sizeof(long long)); i++, lp++)
+	{
+		if(~(*lp) != 0)
+			break;	// 有空位
+	}
+
+	if(i == (FileSystem::BLOCK_SIZE / sizeof(long long)))
+		return -1;
+
+	// 找出空字节
+	p = (unsigned char*)lp;
+	for(j = 0; i < sizeof(long long); j++, p++)
+	{
+		if(~(*p) != 0)
+			break;
+	}
+
+	if(j == sizeof(long long))
+		return -1;
+
+	int offset = 0;
+
+	for(offset = 0; offset < sizeof(char); offset++)
+	{
+		if((*p & (1 << offset)) == 0)
+			return j * 8 * 8 + i * 8 + offset;
+	}
+
+	cerr << "Alloc free bit error" << endl;
+	return -1;
 }
 
 void setBitmap(unsigned char* bitmap, int num, bool bit)
 {
+	unsigned char* p = bitmap;
+	int offset;
+	
+	p += (num / sizeof(unsigned char));
+	offset = num % sizeof(unsigned char);
+	if(bit)
+		*p |= (1 << offset);
+	else
+		*p &= ~(1 << offset);
 
+	return;
 }
 
 bool FileSystem::BadBlock(SuperBlock *spb, short dev, int blkno)

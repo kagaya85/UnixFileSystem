@@ -38,10 +38,8 @@ class DiskDriver
 private:
     int d_diskfileFd;   // 磁盘文件fd
 public:
-	enum BITMAP_TYPE {DATA_BITMAP_BLOCK, INODE_BITMAP_BLOCK};
-
 	static const int ROOTDEV = 0;			/* 根目录物理盘块号 */
-	static const int DATA_BITMAP_BLOCK = 1;	/* 数据 bitmap 物理盘块号 */
+	static const int DATA_BITMAP_BLOCK = 1;	/* 数据 bitmap 物理盘块号 同时用于区分数据与inode盘块类型 */
 	static const int INODE_BITMAP_BLOCK = 2;	/* inode bitmap 物理盘块号 */
 
 	Devtab*	d_tab;		/* 指向块设备表的指针 */
@@ -52,6 +50,7 @@ public:
 	int Initialize();
     int ReadFromDisk(Buf* bp);
     int WriteToDisk(Buf* bp);
+
 };
 
 #endif DISKDRIVER

@@ -112,12 +112,12 @@ public:
 	/**
 	 * bitmap写入磁盘
 	 */
-	void SaveBitmap(BITMAP_TYPE bmp);
+	void SaveBitmap(int bmp);
 
 	/**
 	 * 读入bitmap到缓存
 	 */
-	unsigned char* LoadBimap(BITMAP_TYPE bmp)
+	unsigned char* LoadBimap(int bmp)
 
 	/**
 	 * 找到第一个为0得bit位，置1，返回块号，失败返回-1

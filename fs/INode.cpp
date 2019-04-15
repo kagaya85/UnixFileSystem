@@ -1,10 +1,10 @@
 #include "INode.h"
 #include "Utility.h"
-#include "DeviceManager.h"
+#include "DiskDriver.h"
 #include "Kernel.h"
 /*==============================class Inode===================================*/
 /*	预读块的块号，对普通文件这是预读块所在的物理块号。对硬盘而言，这是当前物理块（扇区）的下一个物理块（扇区）*/
-int Inode::rablock = 0;
+// int Inode::rablock = 0;
 
 /* 内存打开 i节点*/
 Inode::Inode()
@@ -48,7 +48,7 @@ void Inode::ReadI()
 	int nbytes;	/* 传送至用户目标区字节数量 */
 	short dev;
 	Buf* pBuf;
-	User u = KErnel::Instance().GetUser();
+	User u = Kernel::Instance().GetUser();
 	BufferManager& bufMgr = Kernel::Instance().GetBufferManager();
 	DiskDriver& dskDvr = Kernel::Instance().GetDiskDriver();
 
@@ -99,12 +99,10 @@ void Inode::ReadI()
 		else	/* 如果是特殊块设备文件 */
 		{
 			dev = this->i_addr[0];	/* 特殊块设备文件i_addr[0]中存放的是设备号 */
-			Inode::rablock = bn + 1;
+			// Inode::rablock = bn + 1;
 		}
-		else
-		{
-			pBuf = bufMgr.Bread(dev, bn);
-		}
+
+		pBuf = bufMgr.Bread(dev, bn);
 		/* 记录最近读取字符块的逻辑块号 */
 		this->i_lastr = lbn;
 
@@ -255,7 +253,7 @@ int Inode::Bmap(int lbn)
 
 	if(lbn >= Inode::HUGE_FILE_BLOCK)
 	{
-		u.u_error = User::EFBIG;
+		u.u_error = User::ErrorCode::EFBIG;
 		return 0;
 	}
 

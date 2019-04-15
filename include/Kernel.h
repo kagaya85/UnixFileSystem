@@ -5,7 +5,7 @@
 #include "FileSystem.h"
 #include "DiskDriver.h"
 #include "User.h"
-
+#include "Utility.h"
 /*
  * Kernel类用于封装所有内核相关的全局类实例对象，
  * 例如PageManager, ProcessManager等。

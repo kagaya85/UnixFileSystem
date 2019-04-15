@@ -6,7 +6,7 @@
 
 #include <stdlib.h>
 #include <Buf.h>
-#include <io.h>
+#include <sys/io.h>
 #include <unistd.h>
 #include <iostream>
 #include <stdlib.h>
@@ -53,4 +53,4 @@ public:
 
 };
 
-#endif DISKDRIVER
+#endif //DISKDRIVER

@@ -18,7 +18,6 @@
 
 #include "FileSystem.h"
 #include <fcntl.h>
-#include <io.h>
 #include <cstdio>
 
 #define DISK_FILE_NAME "myDisk.img"

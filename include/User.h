@@ -15,7 +15,7 @@ public:
 	
 	/* u_error's Error Code */
 	/* 1~32 来自linux 的内核代码中的/usr/include/asm/errno.h, 其余for V6++ */
-	enum ErrorCode
+	enum class ErrorCode
 	{
 		NOERROR	= 0,	/* No error */
 		EPERM	= 1,	/* Operation not permitted */
@@ -51,7 +51,7 @@ public:
 		EMLINK	= 31,	/* Too many links */
 		EPIPE	= 32,	/* Broken pipe */
 		ENOSYS	= 100,
-		//EFAULT	= 106
+		EFAULT	= 106
 	};
 
 	static const int NSIG = 32;	/* 信号个数 */
@@ -101,7 +101,7 @@ public:
 	 * u_dsize
 	 * u_ssize
 	 */
-	MemoryDescriptor u_MemoryDescriptor;
+	// MemoryDescriptor u_MemoryDescriptor;
 
 	/* 系统调用相关成员 */
 	unsigned int	*u_ar0;		/* 指向核心栈现场保护区中EAX寄存器
@@ -141,10 +141,10 @@ public:
 	short u_rgid;		/* 真实组ID */
 	
 	/* 文件系统相关成员 */
-	OpenFiles u_ofiles;		/* 进程打开文件描述符表对象 */
+	// OpenFiles u_ofiles;		/* 进程打开文件描述符表对象 */
 
 	/* 文件I/O操作 */
-	IOParameter u_IOParam;	/* 记录当前读、写文件的偏移量，用户目标区域和剩余字节数参数 */
+	// IOParameter u_IOParam;	/* 记录当前读、写文件的偏移量，用户目标区域和剩余字节数参数 */
 
 	/* Member Functions */
 public:

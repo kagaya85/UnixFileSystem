@@ -1,13 +1,24 @@
 # ！bash
-TARGET = format.o
+TARGET = format
 OBJDIR = ../obj
-INCLUDE = ../includ
-CFLAGS = 
+OBJ = $(OBJDIR)/format.o $(OBJDIR)/inode.o
+INCLUDE = ../include
+CFLAGS = -I"$(INCLUDE)"
 CC = g++
 RM = -rm -f
+FLAGS = -std=c++11
 
 all : $(TARGET)
 
-$(OBJDIR)/format.o :  format.cpp $(INCLUDE)/format.h $(INCLUDE)/FileSystem.h
-	$(CC) $(CFLAGS) -I"$(INCLUDE)" -c $< -o $@
+$(TARGET) : $(OBJ)
+	$(CC) $(FLAGS) $^ -o $@ 
+
+$(OBJDIR)/format.o : format.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
 	
+$(OBJDIR)/inode.o : ../fs/INode.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
+
+.PHONY : clean
+clean : 
+	$(RM) $(OBJ)

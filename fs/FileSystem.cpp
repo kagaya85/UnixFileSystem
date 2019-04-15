@@ -6,7 +6,6 @@
 /*==============================class SuperBlock===================================*/
 /* 系统全局超级块SuperBlock对象 */
 SuperBlock g_spb;
-
 /*==============================class Mount===================================*/
 Mount::Mount()
 {
@@ -67,7 +66,7 @@ void FileSystem::LoadSuperBlock()
 
 	int* p = (int *)&g_spb;
 
-	pBuf = bufMgr.Bread(FileSystem::ROOTDEV, FileSystem::SUPER_BLOCK_SECTOR_NUMBER);
+	pBuf = bufMgr.Bread(DiskDriver::ROOTDEV, FileSystem::SUPER_BLOCK_SECTOR_NUMBER);
 	Utility::DWordCopy((int *)pBuf->b_addr, p, 32);	// 我的super block 只有128个字节
 	bufMgr.Brelse(pBuf);
 
@@ -96,11 +95,6 @@ SuperBlock* FileSystem::GetFS(short dev)
 		{
 			/* 获取SuperBlock的地址 */
 			sb = this->m_Mount[i].m_spb;
-			if(sb->s_nfree > 100 || sb->s_ninode > 100)
-			{
-				sb->s_nfree = 0;
-				sb->s_ninode = 0;
-			}
 			return sb;
 		}
 	}
@@ -112,7 +106,7 @@ SuperBlock* FileSystem::GetFS(short dev)
 void FileSystem::Update()
 {
 	int i;
-	SuperBlock* spb;
+	SuperBlock* sb;
 	Buf* pBuf;
 
 	/* 另一进程正在进行同步，则直接返回 */
@@ -169,8 +163,8 @@ void FileSystem::Update()
 	this->m_BufferManager->Bflush(DeviceManager::NODEV);
 
 	/* 将bitmap写回磁盘 */
-	this->SaveBmp(DATA_BITMAP_BLOCK);
-	this->SaveBmp(INODE_BITMAP_BLOCK);
+	this->SaveBitmap(DiskDriver::DATA_BITMAP_BLOCK);
+	this->SaveBitmap(DiskDriver::INODE_BITMAP_BLOCK);
 }
 
 Inode* FileSystem::IAlloc(short dev)
@@ -191,10 +185,10 @@ Inode* FileSystem::IAlloc(short dev)
 	while(true)
 	{
 		/* 从bitmap获取空闲外存Inode编号 */
-		ino = this->AllocFreeBit(ib_addr);
+		ino = this->AllocFreeBit(this->m_Mount[0].ib_addr);
 		if(ino <= 0)
 		{
-			cerr << "inode alloc error" << endl;
+			std::cerr << "inode alloc error" << std::endl;
 			exit(-1);
 		}
 		/* 将空闲Inode读入内存 */
@@ -211,13 +205,13 @@ Inode* FileSystem::IAlloc(short dev)
 			pNode->Clean();
 			/* 设置SuperBlock被修改标志 */
 			sb->s_fmod = 1;
-			sb->s_ninode--;
+			sb->s_nifree--;
 			return pNode;
 		}
 		else	/* 如果该Inode已被占用，使用bitmap理论上不应该有这种情况 */	
 		{
 			g_InodeTable.IPut(pNode);
-			this->setBitmap(ib_addr, ino, 1);	// 将对应位置1
+			this->setBitmap(this->m_Mount[0].ib_addr, ino, 1);	// 将对应位置1
 			continue;	/* while循环 */
 		}
 	}
@@ -239,8 +233,8 @@ void FileSystem::IFree(short dev, int number)
 		return;
 	}
 	
-	this->setBitmap(ib_addr, number, 0);	// 将对应位置0
-	sb->s_ninode++;
+	this->setBitmap(this->m_Mount[0].ib_addr, number, 0);	// 将对应位置0
+	sb->s_nifree++;
 
 	/* 设置SuperBlock被修改标志 */
 	sb->s_fmod = 1;
@@ -265,12 +259,12 @@ Buf* FileSystem::Alloc(short dev)
 	{
 		/* 进入睡眠直到获得该锁才继续 */
 		// u.u_procp->Sleep((unsigned long)&sb->s_flock, ProcessManager::PINOD);
-		cerr << "FileSystem::Alloc sb->s_flock is true!" << endl;
+		std::cerr << "FileSystem::Alloc sb->s_flock is true!" << std::endl;
 		exit(-1);
 	}
 
 	/* 从bitmap获取空闲磁盘块编号 */
-	blkno = AllocFreeBit(db_addr);
+	blkno = AllocFreeBit(this->m_Mount[0].db_addr);
 	/* 
 	 * 若获取磁盘块编号小于0，则表示已分配尽所有的空闲磁盘块。
 	 * 或者分配到的空闲磁盘块编号不属于数据盘块区域中(由BadBlock()检查)，
@@ -278,8 +272,8 @@ Buf* FileSystem::Alloc(short dev)
 	 */
 	if(blkno < 0)	// 0号磁盘块在用 0号inode不用
 	{
-		sb->s_nfree = 0;
-		cerr << "No Space On "<< dev << " !" << endl;
+		sb->s_ndfree = 0;
+		std::cerr << "No Space On "<< dev << " !" << std::endl;
 		u.u_error = User::ENOSPC;
 		return NULL;
 	}
@@ -287,7 +281,7 @@ Buf* FileSystem::Alloc(short dev)
 	{
 		return NULL;
 	}
-	sb->s_nfree--;
+	sb->s_ndfree--;
 
 
 	/* 普通情况下成功分配到一空闲磁盘块 */
@@ -316,7 +310,7 @@ void FileSystem::Free(short dev, int blkno)
 	/* 如果空闲磁盘块索引表被上锁，则睡眠等待解锁 */
 	while(sb->s_flock)
 	{
-		cerr << "FileSystem::Free sb->s_flock is true!" << endl;
+		std::cerr << "FileSystem::Free sb->s_flock is true!" << std::endl;
 		exit(-1);
 	}
 
@@ -326,8 +320,8 @@ void FileSystem::Free(short dev, int blkno)
 		return;
 	}
 
-	this->setBitmap(db_addr, blkno, 0);	
-	sb->s_nfree++;	/* SuperBlock中空闲盘快数+1 */
+	this->setBitmap(this->m_Mount[0].db_addr, blkno, 0);	
+	sb->s_ndfree++;	/* SuperBlock中空闲盘快数+1 */
 	sb->s_fmod = 1;
 }
 
@@ -347,7 +341,7 @@ Mount* FileSystem::GetMount(Inode *pInode)
 	return NULL;	/* 查找失败 */
 }
 
-void FileSystem::SaveBmp(int type)
+void FileSystem::SaveBitmap(int type)
 {
 	DiskDriver& driver = Kernel::Instance().GetDiskDriver();
 	Buf tmp;
@@ -365,7 +359,7 @@ void FileSystem::SaveBmp(int type)
 	}
 	else
 	{
-		cerr << "Bitmap save type error" << endl;
+		std::cerr << "Bitmap save type error" << std::endl;
 		exit(-1);
 	}
 	
@@ -380,10 +374,10 @@ unsigned char* FileSystem::LoadBimap(int type)
 		// inode bitmap
 		if(this->m_Mount[0].ib_addr == NULL)
 		{
-			this->m_Mount[0].ib_addr = new(nothrow) unsigned char[FileSystem::BLOCK_SIZE];
+			this->m_Mount[0].ib_addr = new(std::nothrow) unsigned char[FileSystem::BLOCK_SIZE];
 			if(this->m_Mount[0].ib_addr == NULL)
 			{
-				cerr << "Load bitmap error" << endl;
+				std::cerr << "Load bitmap error" << std::endl;
 				exit(-1);
 			}
 		}
@@ -396,10 +390,10 @@ unsigned char* FileSystem::LoadBimap(int type)
 		// data bitmap
 		if(this->m_Mount[0].db_addr == NULL)
 		{
-			this->m_Mount[0].db_addr = new(nothrow) unsigned char[FileSystem::BLOCK_SIZE];
+			this->m_Mount[0].db_addr = new(std::nothrow) unsigned char[FileSystem::BLOCK_SIZE];
 			if(this->m_Mount[0].db_addr == NULL)
 			{
-				cerr << "Load bitmap error" << endl;
+				std::cerr << "Load bitmap error" << std::endl;
 				exit(-1);
 			}
 		}
@@ -409,7 +403,7 @@ unsigned char* FileSystem::LoadBimap(int type)
 	}
 	else
 	{
-		cerr << "Bitmap load type error" << endl;
+		std::cerr << "Bitmap load type error" << std::endl;
 		exit(-1);
 	}
 }
@@ -448,7 +442,7 @@ int AllocFreeBit(unsigned char* bitmap)
 			return j * 8 * 8 + i * 8 + offset;
 	}
 
-	cerr << "Alloc free bit error" << endl;
+	std::cerr << "Alloc free bit error" << std::endl;
 	return -1;
 }
 
@@ -545,7 +539,7 @@ Inode* InodeTable::IGet(short dev, int inumber)
 			/* 若内存Inode表已满，分配空闲Inode失败 */
 			if(NULL == pInode)
 			{
-				Diagnose::Write("Inode Table Overflow !\n");
+				std::cerr << "Inode Table Overflow !" << std::endl;
 				u.u_error = User::ENFILE;
 				return NULL;
 			}
@@ -612,7 +606,7 @@ void InodeTable::IPut(Inode *pNode)
 		}
 
 		/* 更新外存Inode信息 */
-		pNode->IUpdate(Time::time);
+		pNode->IUpdate(time(NULL));
 
 		/* 解锁内存Inode，并且唤醒等待进程 */
 		pNode->Prele();

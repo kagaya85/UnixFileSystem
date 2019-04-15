@@ -59,7 +59,7 @@ Format::Format(int diskSize)
     f_izone_size = (remain / 257) + 1;  // 每256个数据块分配一个inode区块,对应64个inode
     f_dzone_size = remain - f_izone_size;
 
-    f_fd = open(DISK_FILE_NAME, O_BINARY|O_CREAT|O_WRONLY);
+    f_fd = open(DISK_FILE_NAME, L_INCR|O_CREAT|O_WRONLY);
 }
 
 Format::~Format()
@@ -69,7 +69,7 @@ Format::~Format()
 
 /*
  * 初始化超级快
- */
+ */ 
 
 void Format::InitSuperBolck()
 {
@@ -82,7 +82,7 @@ void Format::InitSuperBolck()
 
     spb.s_dstart = f_dsize - f_dzone_size;
     spb.s_ndfree = f_dzone_size - f_init_num;    // 直接管理的空闲盘快数
-    spb.s_ninode = f_izone_size * FileSystem::INODE_NUMBER_PER_SECTOR - f_init_num - 1;   // 直接管理的空闲外存inode数量， -1 为0号inode
+    spb.s_nifree = f_izone_size * FileSystem::INODE_NUMBER_PER_SECTOR - f_init_num - 1;   // 直接管理的空闲外存inode数量， -1 为0号inode
 
     spb.s_flock = 0;    // 封锁空闲盘块索引表标志
     spb.s_ilock = 0;    // 封锁空闲Inode表标志   

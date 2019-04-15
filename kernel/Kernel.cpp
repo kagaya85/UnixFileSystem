@@ -1,5 +1,7 @@
 #include "Kernel.h"
+#include <iostream>
 
+using namespace std;
 
 Kernel Kernel::instance;
 DiskDriver g_DiskDriver;
@@ -26,13 +28,13 @@ void Kernel::InitBuffer()
 	this->m_BufferManager = &g_BufferManager;
 	this->m_DiskDriver = &g_DiskDriver;
 
-	Diagnose::Write("Initialize Buffer...");
+	cout << "Initialize Buffer..." << endl;
 	this->GetBufferManager().Initialize();
-	Diagnose::Write("OK.\n");
+	cout << "OK." << endl;
 
-	Diagnose::Write("Initialize Device Driver...");
+	cout << "Initialize Device Driver..." << endl;
 	this->GetDiskDriver().Initialize();
-	Diagnose::Write("OK.\n");
+	cout << "OK." << endl;
 }
 
 void Kernel::InitFileSystem()
@@ -40,13 +42,13 @@ void Kernel::InitFileSystem()
 	this->m_FileSystem = &g_FileSystem;
 	this->m_FileManager = &g_FileManager;
 
-	Diagnose::Write("Initialize File System...");
+	cout << "Initialize File System..." << endl;
 	this->GetFileSystem().Initialize();
-	Diagnose::Write("OK.\n");
+	cout << "OK." << endl;
 
-	Diagnose::Write("Initialize File Manager...");
+	cout << "Initialize File Manager..." << endl;
 	this->GetFileManager().Initialize();
-	Diagnose::Write("OK.\n");
+	cout << "OK." << endl;
 }
 
 void Kernel::Initialize()

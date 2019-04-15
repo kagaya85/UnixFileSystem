@@ -9,6 +9,7 @@
  */
 
 #include "SecondFS.h"
+#include "Kernel.h"
 #include <iostream>
 #include <string>
 
@@ -34,6 +35,14 @@ int main()
     } 
 }
 
+/**
+ * 使用kernel初始化文件系统
+ */
+SecondFS::SecondFS()
+{
+    Kernel::Instance().Initialize();
+}
+
 /*
  * 实现一个命令提示符 
  */
@@ -41,7 +50,7 @@ int SecondFS::prompt()
 {
     string command;
     
-    cout << "root@localhost# ";
+    cout << "[kagaya@localhost]# ";
     getline(cin, command);
     
     if(command == "creat")

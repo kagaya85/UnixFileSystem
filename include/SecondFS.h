@@ -30,14 +30,11 @@ public:
         Close,
         Mkdir
     };
-private:
-    Inode inodes[128];
-    Inode* currentDirI;
 
 public:
     SecondFS();
     ~SecondFS();
-
+    
     int prompt();
     
     /* command */

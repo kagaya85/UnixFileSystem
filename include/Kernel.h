@@ -2,6 +2,7 @@
 #define KERNEL_H
 
 #include "BufferManager.h"
+#include "FileManager.h"
 #include "FileSystem.h"
 #include "DiskDriver.h"
 #include "User.h"

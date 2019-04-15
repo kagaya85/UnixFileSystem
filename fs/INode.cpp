@@ -68,7 +68,7 @@ void Inode::ReadI()
 	// }
 
 	/* 一次一个字符块地读入所需全部数据，直至遇到文件尾 */
-	while( User::NOERROR == u.u_error && u.u_IOParam.m_Count != 0)
+	while( User::ErrorCode::MYNOERROR == u.u_error && u.u_IOParam.m_Count != 0)
 	{
 		lbn = bn = u.u_IOParam.m_Offset / Inode::BLOCK_SIZE;
 		offset = u.u_IOParam.m_Offset % Inode::BLOCK_SIZE;
@@ -154,7 +154,7 @@ void Inode::WriteI()
 		return;
 	}
 
-	while( User::NOERROR == u.u_error && u.u_IOParam.m_Count != 0 )
+	while( User::ErrorCode::MYNOERROR == u.u_error && u.u_IOParam.m_Count != 0 )
 	{
 		lbn = u.u_IOParam.m_Offset / Inode::BLOCK_SIZE;
 		offset = u.u_IOParam.m_Offset % Inode::BLOCK_SIZE;
@@ -197,7 +197,7 @@ void Inode::WriteI()
 		u.u_IOParam.m_Offset += nbytes;
 		u.u_IOParam.m_Count -= nbytes;
 
-		if( u.u_error != User::NOERROR )	/* 写过程中出错 */
+		if( u.u_error != User::ErrorCode::MYNOERROR )	/* 写过程中出错 */
 		{
 			bufMgr.Brelse(pBuf);
 		}
@@ -253,7 +253,7 @@ int Inode::Bmap(int lbn)
 
 	if(lbn >= Inode::HUGE_FILE_BLOCK)
 	{
-		u.u_error = User::ErrorCode::EFBIG;
+		u.u_error = User::ErrorCode::MYEFBIG;
 		return 0;
 	}
 
@@ -417,7 +417,7 @@ void Inode::IUpdate(int time)
 		/* 邓蓉的注释：在缓存池中找到包含本i节点（this->i_number）的缓存块
 		 * 这是一个上锁的缓存块，本段代码中的Bwrite()在将缓存块写回磁盘后会释放该缓存块。
 		 * 将该存放该DiskInode的字符块读入缓冲区 */
-		pBuf = bufMgr.Bread(this->i_dev, FileSystem::INODE_ZONE_START_SECTOR + this->i_number / FileSystem::INODE_NUMBER_PER_SECTOR);
+		pBuf = bufMgr.Bread(this->i_dev, Constant::INODE_ZONE_START_SECTOR + this->i_number / Constant::INODE_NUMBER_PER_SECTOR);
 
 		/* 将内存Inode副本中的信息复制到dInode中，然后将dInode覆盖缓存中旧的外存Inode */
 		dInode.d_mode = this->i_mode;
@@ -441,7 +441,7 @@ void Inode::IUpdate(int time)
 		}
 
 		/* 将p指向缓存区中旧外存Inode的偏移位置 */
-		unsigned char* p = pBuf->b_addr + (this->i_number % FileSystem::INODE_NUMBER_PER_SECTOR) * sizeof(DiskInode);
+		unsigned char* p = pBuf->b_addr + (this->i_number % Constant::INODE_NUMBER_PER_SECTOR) * sizeof(DiskInode);
 		DiskInode* pNode = &dInode;
 
 		/* 用dInode中的新数据覆盖缓存中的旧外存Inode */
@@ -615,7 +615,7 @@ void Inode::ICopy(Buf *bp, int inumber)
 	DiskInode* pNode = &dInode;
 
 	/* 将p指向缓存区中编号为inumber外存Inode的偏移位置 */
-	unsigned char* p = bp->b_addr + (inumber % FileSystem::INODE_NUMBER_PER_SECTOR) * sizeof(DiskInode);
+	unsigned char* p = bp->b_addr + (inumber % Constant::INODE_NUMBER_PER_SECTOR) * sizeof(DiskInode);
 	/* 将缓存中外存Inode数据拷贝到临时变量dInode中，按4字节拷贝 */
 	Utility::DWordCopy( (int *)p, (int *)pNode, sizeof(DiskInode)/sizeof(int) );
 
@@ -630,34 +630,3 @@ void Inode::ICopy(Buf *bp, int inumber)
 		this->i_addr[i] = dInode.d_addr[i];
 	}
 }
-
-
-/*============================class DiskInode=================================*/
-
-DiskInode::DiskInode()
-{
-	/* 
-	 * 如果DiskInode没有构造函数，会发生如下较难察觉的错误：
-	 * DiskInode作为局部变量占据函数Stack Frame中的内存空间，但是
-	 * 这段空间没有被正确初始化，仍旧保留着先前栈内容，由于并不是
-	 * DiskInode所有字段都会被更新，将DiskInode写回到磁盘上时，可能
-	 * 将先前栈内容一同写回，导致写回结果出现莫名其妙的数据。
-	 */
-	this->d_mode = 0;
-	this->d_nlink = 0;
-	this->d_uid = -1;
-	this->d_gid = -1;
-	this->d_size = 0;
-	for(int i = 0; i < 10; i++)
-	{
-		this->d_addr[i] = 0;
-	}
-	this->d_atime = 0;
-	this->d_mtime = 0;
-}
-
-DiskInode::~DiskInode()
-{
-	//nothing to do here
-}
-

@@ -41,6 +41,7 @@ public:
 	static const int ROOTDEV = 0;			/* 根目录物理盘块号 */
 	static const int DATA_BITMAP_BLOCK = 1;	/* 数据 bitmap 物理盘块号 同时用于区分数据与inode盘块类型 */
 	static const int INODE_BITMAP_BLOCK = 2;	/* inode bitmap 物理盘块号 */
+	static const int NODEV = -1;	/* NODEV设备号 */
 
 	Devtab*	d_tab;		/* 指向块设备表的指针 */
 

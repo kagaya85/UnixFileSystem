@@ -35,7 +35,7 @@ void BufferManager::Initialize()
 		bp->b_flags = Buf::B_BUSY;
 		Brelse(bp);
 	}
-	this->m_DiskDriver = &Kernel::Instance().GetDeviceDriver();
+	this->m_DiskDriver = &Kernel::Instance().GetDiskDriver();
 	return;
 }
 
@@ -62,7 +62,7 @@ loop:
 
 	if(dp == NULL)
 	{
-		cerr << "Null devtab!" << endl;
+		std::cerr << "Null devtab!" << std::endl;
 		exit(-1);
 	}
 
@@ -254,7 +254,7 @@ loop:
 	for(bp = this->bFreeList.av_forw; bp != &(this->bFreeList); bp = bp->av_forw)
 	{
 		/* 找出自由队列中所有延迟写的块 */
-		if( (bp->b_flags & Buf::B_DELWRI) && (dev == DeviceManager::NODEV || dev == bp->b_dev) )
+		if( (bp->b_flags & Buf::B_DELWRI) && (dev == DiskDriver::NODEV || dev == bp->b_dev) )
 		{
 			bp->b_flags |= Buf::B_ASYNC;
 			this->NotAvail(bp);

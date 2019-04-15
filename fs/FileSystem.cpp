@@ -6,6 +6,8 @@
 /*==============================class SuperBlock===================================*/
 /* 系统全局超级块SuperBlock对象 */
 SuperBlock g_spb;
+/*  定义内存Inode表的实例 */
+InodeTable g_InodeTable;
 /*==============================class Mount===================================*/
 Mount::Mount()
 {
@@ -66,11 +68,11 @@ void FileSystem::LoadSuperBlock()
 
 	int* p = (int *)&g_spb;
 
-	pBuf = bufMgr.Bread(DiskDriver::ROOTDEV, FileSystem::SUPER_BLOCK_SECTOR_NUMBER);
+	pBuf = bufMgr.Bread(DiskDriver::ROOTDEV, Constant::SUPER_BLOCK_SECTOR_NUMBER);
 	Utility::DWordCopy((int *)pBuf->b_addr, p, 32);	// 我的super block 只有128个字节
 	bufMgr.Brelse(pBuf);
 
-	if (User::NOERROR != u.u_error)
+	if (User::ErrorCode::MYNOERROR != u.u_error)
 	{
 		Utility::Panic("Load SuperBlock Error....!\n");
 	}
@@ -89,7 +91,7 @@ SuperBlock* FileSystem::GetFS(short dev)
 	SuperBlock* sb;
 	
 	/* 遍历系统装配块表，寻找设备号为dev的设备中文件系统的SuperBlock */
-	for(int i = 0; i < FileSystem::NMOUNT; i++)
+	for(int i = 0; i < Constant::NMOUNT; i++)
 	{
 		if(this->m_Mount[i].m_spb != NULL && this->m_Mount[i].m_dev == dev)
 		{
@@ -119,7 +121,7 @@ void FileSystem::Update()
 	this->updlock++;
 
 	/* 同步SuperBlock到磁盘 */
-	for(i = 0; i < FileSystem::NMOUNT; i++)
+	for(i = 0; i < Constant::NMOUNT; i++)
 	{
 		if(this->m_Mount[i].m_spb != NULL)	/* 该Mount装配块对应某个文件系统 */
 		{
@@ -160,7 +162,7 @@ void FileSystem::Update()
 	this->updlock = 0;
 
 	/* 将延迟写的缓存块写到磁盘上 */
-	this->m_BufferManager->Bflush(DeviceManager::NODEV);
+	this->m_BufferManager->Bflush(DiskDriver::NODEV);
 
 	/* 将bitmap写回磁盘 */
 	this->SaveBitmap(DiskDriver::DATA_BITMAP_BLOCK);
@@ -274,7 +276,7 @@ Buf* FileSystem::Alloc(short dev)
 	{
 		sb->s_ndfree = 0;
 		std::cerr << "No Space On "<< dev << " !" << std::endl;
-		u.u_error = User::ENOSPC;
+		u.u_error = User::ErrorCode::MYENOSPC;
 		return NULL;
 	}
 	if( this->BadBlock(sb, dev, blkno) )
@@ -328,7 +330,7 @@ void FileSystem::Free(short dev, int blkno)
 Mount* FileSystem::GetMount(Inode *pInode)
 {
 	/* 遍历系统的装配块表 */
-	for(int i = 0; i <= FileSystem::NMOUNT; i++)
+	for(int i = 0; i <= Constant::NMOUNT; i++)
 	{
 		Mount* pMount = &(this->m_Mount[i]);
 
@@ -374,7 +376,7 @@ unsigned char* FileSystem::LoadBimap(int type)
 		// inode bitmap
 		if(this->m_Mount[0].ib_addr == NULL)
 		{
-			this->m_Mount[0].ib_addr = new(std::nothrow) unsigned char[FileSystem::BLOCK_SIZE];
+			this->m_Mount[0].ib_addr = new(std::nothrow) unsigned char[Constant::BLOCK_SIZE];
 			if(this->m_Mount[0].ib_addr == NULL)
 			{
 				std::cerr << "Load bitmap error" << std::endl;
@@ -390,7 +392,7 @@ unsigned char* FileSystem::LoadBimap(int type)
 		// data bitmap
 		if(this->m_Mount[0].db_addr == NULL)
 		{
-			this->m_Mount[0].db_addr = new(std::nothrow) unsigned char[FileSystem::BLOCK_SIZE];
+			this->m_Mount[0].db_addr = new(std::nothrow) unsigned char[Constant::BLOCK_SIZE];
 			if(this->m_Mount[0].db_addr == NULL)
 			{
 				std::cerr << "Load bitmap error" << std::endl;
@@ -414,13 +416,13 @@ int AllocFreeBit(unsigned char* bitmap)
 	unsigned long long* lp = (unsigned long long*)p;
 
 	int i, j;
-	for(i = 0; i < (FileSystem::BLOCK_SIZE / sizeof(long long)); i++, lp++)
+	for(i = 0; i < (Constant::BLOCK_SIZE / sizeof(long long)); i++, lp++)
 	{
 		if(~(*lp) != 0)
 			break;	// 有空位
 	}
 
-	if(i == (FileSystem::BLOCK_SIZE / sizeof(long long)))
+	if(i == (Constant::BLOCK_SIZE / sizeof(long long)))
 		return -1;
 
 	// 找出空字节
@@ -519,7 +521,7 @@ Inode* InodeTable::IGet(short dev, int inumber)
 				{
 					/* 将参数设为子文件系统设备号、根目录Inode编号 */
 					dev = pMount->m_dev;
-					inumber = FileSystem::ROOTINO;
+					inumber = Constant::ROOTINO;
 					/* 回到while循环，以新dev，inumber值重新搜索 */
 					continue;
 				}
@@ -540,7 +542,7 @@ Inode* InodeTable::IGet(short dev, int inumber)
 			if(NULL == pInode)
 			{
 				std::cerr << "Inode Table Overflow !" << std::endl;
-				u.u_error = User::ENFILE;
+				u.u_error = User::ErrorCode::MYENFILE;
 				return NULL;
 			}
 			else	/* 分配空闲Inode成功，将外存Inode读入新分配的内存Inode */
@@ -554,7 +556,7 @@ Inode* InodeTable::IGet(short dev, int inumber)
 
 				BufferManager& bm = Kernel::Instance().GetBufferManager();
 				/* 将该外存Inode读入缓冲区 */
-				Buf* pBuf = bm.Bread(dev, FileSystem::INODE_ZONE_START_SECTOR + inumber / FileSystem::INODE_NUMBER_PER_SECTOR );
+				Buf* pBuf = bm.Bread(dev, Constant::INODE_ZONE_START_SECTOR + inumber / Constant::INODE_NUMBER_PER_SECTOR );
 
 				/* 如果发生I/O错误 */
 				if(pBuf->b_flags & Buf::B_ERROR)

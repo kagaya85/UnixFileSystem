@@ -33,8 +33,7 @@ public:
 private:
     Inode inodes[128];
     Inode* currentDirI;
-    /*  定义内存Inode表的实例 */
-    InodeTable g_InodeTable;
+
 public:
     SecondFS();
     ~SecondFS();

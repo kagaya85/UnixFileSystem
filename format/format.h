@@ -16,9 +16,11 @@
 #ifndef FORMAT_H
 #define FORMAT_H
 
-#include "FileSystem.h"
 #include <fcntl.h>
 #include <cstdio>
+#include <sys/types.h>    
+#include <sys/stat.h>
+#include <unistd.h>
 
 #define DISK_FILE_NAME "myDisk.img"
 /*

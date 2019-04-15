@@ -61,11 +61,6 @@ BufferManager& Kernel::GetBufferManager()
 	return *(this->m_BufferManager);
 }
 
-DeviceManager& Kernel::GetDeviceManager()
-{
-	return *(this->m_DeviceManager);
-}
-
 FileSystem& Kernel::GetFileSystem()
 {
 	return *(this->m_FileSystem);

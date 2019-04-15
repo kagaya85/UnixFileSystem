@@ -639,7 +639,7 @@ void InodeTable::UpdateInodeTable()
 		{
 			/* 将内存Inode上锁后同步到外存Inode */
 			this->m_Inode[i].i_flag |= Inode::ILOCK;
-			this->m_Inode[i].IUpdate(Time::time);
+			this->m_Inode[i].IUpdate(time(NULL));
 
 			/* 对内存Inode解锁 */
 			this->m_Inode[i].Prele();

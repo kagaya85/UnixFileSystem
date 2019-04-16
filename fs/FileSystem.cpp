@@ -1,13 +1,9 @@
-#include "FileSystem.h"
+#include "../include/FileSystem.h"
 #include "Kernel.h"
 #include "BufferManager.h"
 #include <time.h>
 
-/*==============================class SuperBlock===================================*/
-/* 系统全局超级块SuperBlock对象 */
-SuperBlock g_spb;
-/*  定义内存Inode表的实例 */
-InodeTable g_InodeTable;
+
 /*==============================class Mount===================================*/
 Mount::Mount()
 {
@@ -145,7 +141,7 @@ void FileSystem::Update()
 			int* p = (int *)sb;
 
 			/* 将要写入到设备dev上的SUPER_BLOCK_SECTOR_NUMBER + j扇区中去 */
-			pBuf = this->m_BufferManager->GetBlk(this->m_Mount[i].m_dev, FileSystem::SUPER_BLOCK_SECTOR_NUMBER);
+			pBuf = this->m_BufferManager->GetBlk(this->m_Mount[i].m_dev, Constant::SUPER_BLOCK_SECTOR_NUMBER);
 
 			/* 将SuperBlock中第0 - 128字节写入缓存区 */
 			Utility::DWordCopy(p, (int *)pBuf->b_addr, 32);

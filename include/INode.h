@@ -79,12 +79,12 @@ public:
 	 * @comment 对特殊字符设备、块设备文件，调用该设备注册在块设备开关表
 	 * 中的设备初始化程序
 	 */
-	// void OpenI(int mode);
+	void OpenI(int mode);
 	/* 
 	 * @comment 对特殊字符设备、块设备文件。如果对该设备的引用计数为0，
 	 * 则调用该设备的关闭程序
 	 */
-	// void CloseI(int mode);
+	void CloseI(int mode);
 	
 	/* 
 	 * @comment 更新外存Inode的最后的访问时间、修改时间

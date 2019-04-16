@@ -47,4 +47,15 @@ private:
 	User* m_User;
 };
 
+Kernel Kernel::instance;
+DiskDriver g_DiskDriver;
+BufferManager g_BufferManager;
+FileSystem g_FileSystem;
+FileManager g_FileManager;
+User g_User;
+/* 系统全局超级块SuperBlock对象 */
+SuperBlock g_spb;
+/*  定义内存Inode表的实例 */
+InodeTable g_InodeTable;
+
 #endif

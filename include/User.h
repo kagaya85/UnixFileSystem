@@ -2,6 +2,7 @@
 #define USER_H
 
 #include "INode.h"
+#include "File.h"
 #include "FileManager.h"
 
 /*
@@ -15,7 +16,7 @@ public:
 	
 	/* u_error's Error Code */
 	/* 1~32 来自linux 的内核代码中的/usr/include/asm/errno.h, 其余for V6++ */
-	enum class ErrorCode
+	enum ErrorCode
 	{
 		MYNOERROR	= 0,	/* No error */
 		MYEPERM		= 1,	/* Operation not permitted */
@@ -140,7 +141,7 @@ public:
 	short u_rgid;		/* 真实组ID */
 	
 	/* 文件系统相关成员 */
-	// OpenFiles u_ofiles;		/* 进程打开文件描述符表对象 */
+	OpenFiles u_ofiles;		/* 进程打开文件描述符表对象 */
 
 	/* 文件I/O操作 */
 	IOParameter u_IOParam;	/* 记录当前读、写文件的偏移量，用户目标区域和剩余字节数参数 */

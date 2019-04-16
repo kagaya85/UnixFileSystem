@@ -397,6 +397,59 @@ int Inode::Bmap(int lbn)
 	}
 }
 
+void Inode::OpenI(int mode)
+{
+	short dev;
+	DiskDriver& driver = Kernel::Instance().GetDiskDriver();
+	User& u = Kernel::Instance().GetUser();
+
+	/* 
+	 * 对于特殊块设备、字符设备文件，i_addr[]不再是
+	 * 磁盘块号索引表，addr[0]中存放了设备号dev
+	 */
+	dev = this->i_addr[0];
+
+	/* 提取主设备号 */
+	short major = Utility::GetMajor(dev);
+
+	switch( this->i_mode & Inode::IFMT)
+	{
+	case Inode::IFBLK:	/* 块设备特殊类型文件 */
+		/* 检查设备号是否超出系统中块设备数量 */
+		if(major >= driver.GetNBlkDev())
+		{
+			u.u_error = User::MYENXIO;    /* no such device */
+			return;
+		}
+		break;
+	}
+
+	return;
+}
+
+void Inode::CloseI(int mode)
+{
+	short dev;
+	DiskDriver& driver = Kernel::Instance().GetDiskDriver();
+
+	/* addr[0]中存放了设备号dev */
+	dev = this->i_addr[0];
+
+	short major = Utility::GetMajor(dev);
+
+	/* 不再使用该文件,关闭特殊文件 */
+	if(this->i_count <= 1)
+	{
+		switch( this->i_mode & Inode::IFMT)
+		{
+		case Inode::IFCHR:
+			break;
+		case Inode::IFBLK:
+			break;
+		}
+	}
+}
+
 void Inode::IUpdate(int time)
 {
 	Buf* pBuf;

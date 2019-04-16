@@ -2,26 +2,8 @@
 #define FILE_MANAGER_H
 
 #include "FileSystem.h"
-/*
- * 文件I/O的参数类
- * 对文件读、写时需用到的读、写偏移量、
- * 字节数以及目标区域首地址参数。
- */
-class IOParameter
-{
-	/* Functions */
-public:
-	/* Constructors */
-	IOParameter(){};
-	/* Destructors */
-	~IOParameter(){};
-	
-	/* Members */
-public:
-	unsigned char* m_Base;	/* 当前读、写用户目标区域的首地址 */
-	int m_Offset;	/* 当前读、写文件的字节偏移量 */
-	int m_Count;	/* 当前还剩余的读、写字节数量 */
-};
+
+class OpenFileTable;
 /* 
  * 文件管理类(FileManager)
  * 封装了文件系统的各种系统调用在核心态下处理过程，
@@ -108,12 +90,12 @@ public:
 	/* 
 	 * @comment 读写系统调用公共部分代码
 	 */
-	// void Rdwr(enum File::FileFlags mode);
+	void Rdwr(enum File::FileFlags mode);
 
 	/* 
 	 * @comment Pipe()管道建立系统调用处理过程
 	 */
-	void Pipe();
+	// void Pipe();
 
 	/* 
 	 * @comment 管道读操作
@@ -190,7 +172,42 @@ public:
 	InodeTable* m_InodeTable;
 
 	/* 对全局对象g_OpenFileTable的引用，该对象负责打开文件表项的管理 */
-	// OpenFileTable* m_OpenFileTable;
+	OpenFileTable* m_OpenFileTable;
+};
+
+class OpenFileTable
+{
+public:
+	/* static consts */
+	//static const int NINODE	= 100;	/* 内存Inode的数量 */
+	static const int NFILE	= 100;	/* 打开文件控制块File结构的数量 */
+
+	/* Functions */
+public:
+	/* Constructors */
+	OpenFileTable();
+	/* Destructors */
+	~OpenFileTable();
+	
+	// /* 
+	 // * @comment 根据用户系统调用提供的文件描述符参数fd，
+	 // * 找到对应的打开文件控制块File结构
+	 // */
+	// File* GetF(int fd);
+	/* 
+	 * @comment 在系统打开文件表中分配一个空闲的File结构
+	 */
+	File* FAlloc();
+	/* 
+	 * @comment 对打开文件控制块File结构的引用计数f_count减1，
+	 * 若引用计数f_count为0，则释放File结构。
+	 */
+	void CloseF(File* pFile);
+	
+	/* Members */
+public:
+	File m_File[NFILE];			/* 系统打开文件表，为所有进程共享，进程打开文件描述符表
+								中包含指向打开文件表中对应File结构的指针。*/
 };
 
 class DirectoryEntry

@@ -37,6 +37,7 @@ class DiskDriver
 {
 private:
     int d_diskfileFd;   // 磁盘文件fd
+	const int nblkdev = 1;	// 暂时只有一个设备
 public:
 	static const int ROOTDEV = 0;			/* 根目录物理盘块号 */
 	static const int DATA_BITMAP_BLOCK = 1;	/* 数据 bitmap 物理盘块号 同时用于区分数据与inode盘块类型 */
@@ -51,7 +52,7 @@ public:
 	int Initialize();
     int ReadFromDisk(Buf* bp);
     int WriteToDisk(Buf* bp);
-
+	int GetNBlkDev(){return nblkdev;};				/* 获取系统中实际块设备数量nblkdev */
 };
 
 #endif //DISKDRIVER

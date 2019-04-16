@@ -80,15 +80,6 @@ This project mainly has two executable program:
 
   * `FileSystem` 文件系统的初始化，管理文件存储设备中的各类存储资源，磁盘块、外存`INode`的分配、释放。
 
-    定义的全局变量
-
-    ```c++
-    /* 系统全局超级块SuperBlock对象 */
-    SuperBlock g_spb;
-    /*  定义内存Inode表的实例 */
-    InodeTable g_InodeTable;
-    ```
-
   * `Inode` `Inode`相关
 
   * `SecondFS` 实现shell窗口，调用Kernel提供的初始化函数以及`FileManager`的文件操作接口
@@ -99,18 +90,27 @@ This project mainly has two executable program:
 
   * Kernel.cpp定义的全局变量
 
-    ```c++
-    Kernel Kernel::instance;
-    DiskDriver g_DiskDriver;
-    BufferManager g_BufferManager;
-    FileSystem g_FileSystem;
-    FileManager g_FileManager;
-    User g_User;
-    ```
+    
 
   * Kernel 通过kernel类中的静态变量来对一些全局对象、变量进行管理
 
+* Defines.h
 
+  ```c++
+  /* 定义全局实例 */
+  Kernel Kernel::instance;
+  DiskDriver g_DiskDriver;
+  BufferManager g_BufferManager;
+  FileSystem g_FileSystem;
+  FileManager g_FileManager;
+  User g_User;
+  /* 系统全局超级块SuperBlock对象 */
+  SuperBlock g_spb;
+  /*  定义内存Inode表的实例 */
+  InodeTable g_InodeTable;
+  ```
+
+  
 
 > 2019年4月3日
 >

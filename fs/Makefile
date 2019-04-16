@@ -1,27 +1,30 @@
 # ！bash
-TARGET = SecondFS.o
 OBJDIR = ../obj
 INCLUDE = ../includ
-CFLAGS = 
+TARGET = $(OBJDIR)File.o $(OBJDIR)/FileManager.o $(OBJDIR)/FileSystem.o \
+	$(OBJDIR)/INode.o $(OBJDIR)/SecondFS.o
+CFLAGS = -I"$(INCLUDE)" -std=c++11 -c
 CC = g++
+RM = -rm -f
 
-all : $(OBJDIR)/SecondFS.o  $(OBJDIR)/inode.o $(OBJDIR)/filesystem.o \
-			$(OBJDIR)/file.o $(OBJDIR)/filemanager.o
+all : $(TARGET)
 
-$(OBJDIR)/SecondFS.o : SecondFS.cpp $(INCLUDE)/SecondFS.h
-	$(CC) $(CFLAGS) -I"$(INCLUDE)" -c $< -o $@
+$(OBJDIR)/File.o	:	File.cpp
+	$(CC) $(CFLAGS) $< -o $@
 
-$(OBJDIR)/filesystem.o	:	FileSystem.cpp $(INCLUDE)/FileSystem.h
-	$(CC) $(CFLAGS) -I"$(INCLUDE)" -c $< -o $@
+$(OBJDIR)/FileManager.o	:	FileManager.cpp
+	$(CC) $(CFLAGS) $< -o $@
 	
-$(OBJDIR)/openfilemanager.o	:	OpenFileManager.cpp $(INCLUDE)/OpenFileManager.h
-	$(CC) $(CFLAGS) -I"$(INCLUDE)" -c $< -o $@
-	
-$(OBJDIR)/inode.o	:	INode.cpp $(INCLUDE)/INode.h
-	$(CC) $(CFLAGS) -I"$(INCLUDE)" -c $< -o $@
-	
-$(OBJDIR)/file.o	:	File.cpp $(INCLUDE)/File.h
-	$(CC) $(CFLAGS) -I"$(INCLUDE)" -c $< -o $@
+$(OBJDIR)/FileSystem.o	:	FileSystem.cpp
+	$(CC) $(CFLAGS) $< -o $@
 
-$(OBJDIR)/filemanager.o	:	FileManager.cpp $(INCLUDE)/FileManager.h
-	$(CC) $(CFLAGS) -I"$(INCLUDE)" -c $< -o $@	
+$(OBJDIR)/INode.o	:	INode.cpp
+	$(CC) $(CFLAGS) $< -o $@
+
+$(OBJDIR)/SecondFS.o	:	SecondFS.cpp
+	$(CC) $(CFLAGS) $< -o $@
+
+
+.PHONY: clean
+clean:
+	$(RM) $(TARGET)

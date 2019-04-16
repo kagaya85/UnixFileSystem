@@ -148,6 +148,11 @@ public:
 
 	/* Member Functions */
 public:
+	User(){
+		u_uid = 0;
+		u_gid = 0;
+	};
+	~User(){};
 	/* 根据系统调用参数uid设置有效用户ID，真实用户ID，进程用户ID(p_uid) */
 	void Setuid();
 

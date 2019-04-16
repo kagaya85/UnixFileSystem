@@ -1,7 +1,7 @@
 # ！bash
 OBJDIR = ../obj
 INCLUDE = ../includ
-TARGET = $(OBJDIR)BufferManager.o $(OBJDIR)/DiskDriver.o
+TARGET = $(OBJDIR)/BufferManager.o $(OBJDIR)/DiskDriver.o
 CFLAGS = -I"$(INCLUDE)" -std=c++11 -c
 CC = g++
 RM = -rm -f

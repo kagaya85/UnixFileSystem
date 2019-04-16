@@ -7,7 +7,7 @@ CC = g++
 RM = -rm -f
 SUBDIRS = dev fs kernel
 
-all : $(TARGET) subDirs
+all : subDirs $(TARGET)
 
 subDirs : $(SUBDIRS)
 	for dir in $(SUBDIRS);\

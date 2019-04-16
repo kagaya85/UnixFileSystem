@@ -8,7 +8,7 @@
  * Modified By: kagaya (kagaya85@outlook.com>)
  */
 
-#include "SecondFS.h"
+#include "../include/SecondFS.h"
 #include "Kernel.h"
 #include <iostream>
 #include <string>
@@ -28,7 +28,9 @@ int main()
             case SecondFS::Mkdir:
                 fs.mkdir();
                 break;
-        
+            case SecondFS::Ls:
+                fs.ls();
+                break;
             default:
                 break;
         }
@@ -40,7 +42,19 @@ int main()
  */
 SecondFS::SecondFS()
 {
-    Kernel::Instance().Initialize();
+	Kernel::Instance().Initialize();	
+	Kernel::Instance().GetFileSystem().LoadSuperBlock();
+	cout << "secondFS Loaded......OK\n" << endl;
+
+	/*  初始化rootDirInode和用户当前工作目录，以便NameI()正常工作 */
+	FileManager& fileMgr = Kernel::Instance().GetFileManager();
+	fileMgr.rootDirInode = g_InodeTable.IGet(DiskDriver::ROOTDEV, Constant::ROOTINO);
+	fileMgr.rootDirInode->i_flag &= (~Inode::ILOCK);
+
+	User& us = Kernel::Instance().GetUser();
+	us.u_cdir = g_InodeTable.IGet(DiskDriver::ROOTDEV, Constant::ROOTINO);
+	us.u_cdir->i_flag &= (~Inode::ILOCK);
+	Utility::StringCopy("/", us.u_curdir);
 }
 
 /*
@@ -49,8 +63,8 @@ SecondFS::SecondFS()
 int SecondFS::prompt()
 {
     string command;
-    
-    cout << "[kagaya@localhost]# ";
+	User& u = Kernel::Instance().GetUser();
+    cout << "[kagaya@localhost]" << u.u_curdir << "# ";
     getline(cin, command);
     
     if(command == "creat")
@@ -67,6 +81,8 @@ int SecondFS::prompt()
         return SecondFS::Close;
     else if(command == "mkdir")
         return SecondFS::Mkdir;
+    else if(command == "ls")
+        return SecondFS::Ls;
     else
         cout << "Command " << command << " not found" << endl;
 
@@ -75,6 +91,16 @@ int SecondFS::prompt()
 
 void SecondFS::mkdir()
 {
+    return;
+}
 
+void SecondFS::ls()
+{
+	User& u = Kernel::Instance().GetUser();
+	Inode* pInode;
+
+	pInode = u.u_cdir;  // 当前目录Inode
+
+    return;
 }
 

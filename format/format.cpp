@@ -191,17 +191,17 @@ void Format::InitData()
     // datazone 初始盘块号
     int base_offset = 3 + f_izone_size; // 3 (superblock databitmap inodebitmap) + inode区盘块数量
     DirItem root[6] = {
-        {".", 1},
-        {"..", 1},
-        {"bin", 2},
-        {"etc", 3},
-        {"home", 4},
-        {"dev", 5}
+        {1, "."},
+        {1, ".."},
+        {2, "bin"},
+        {3, "etc"},
+        {4, "home"},
+        {5, "dev"}
     };
 
     DirItem sub_dir[2] = {
-        {".", 0},   // 当前目录inode默认无效
-        {"..", 1}   // 上级目录均为root
+        {0, "."},   // 当前目录inode默认无效
+        {1, ".."}   // 上级目录均为root
     };
 
     // 写入root目录文件

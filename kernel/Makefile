@@ -1,7 +1,7 @@
 # ！bash
 OBJDIR = ../obj
 INCLUDE = ../includ
-TARGET = $(OBJDIR)Kernel.o $(OBJDIR)/User.o $(OBJDIR)/Utility.o
+TARGET = $(OBJDIR)/Kernel.o $(OBJDIR)/User.o $(OBJDIR)/Utility.o
 CFLAGS = -I"$(INCLUDE)" -std=c++11 -c
 CC = g++
 RM = -rm -f

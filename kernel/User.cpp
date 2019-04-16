@@ -9,12 +9,11 @@ void User::Setuid()
 	if ( this->u_ruid == uid || this->SUser() )
 	{
 		this->u_uid = uid;
-		this->u_procp->p_uid = uid;
 		this->u_ruid = uid;
 	}
 	else
 	{
-		this->u_error = User::EPERM;
+		this->u_error = User::MYEPERM;
 	}
 }
 
@@ -38,7 +37,7 @@ void User::Setgid()
 	}
 	else
 	{
-		this->u_error = User::EPERM;
+		this->u_error = User::MYEPERM;
 	}
 }
 
@@ -64,7 +63,7 @@ bool User::SUser()
 	}
 	else
 	{
-		this->u_error = User::EPERM;
+		this->u_error = User::MYEPERM;
 		return false;
 	}
 }

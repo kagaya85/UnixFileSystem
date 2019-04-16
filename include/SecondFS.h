@@ -28,7 +28,8 @@ public:
         Write,
         Lseek,
         Close,
-        Mkdir
+        Mkdir,
+        Ls
     };
 
 public:
@@ -45,6 +46,7 @@ public:
     void lseek();
     void close();
     void mkdir();
+    void ls();
 };
 
 

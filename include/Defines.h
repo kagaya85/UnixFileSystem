@@ -10,8 +10,8 @@
  */
 struct DirItem 
 {
-	char name[28];	// 文件名
 	int inode_num;	// inode号
+	char name[28];	// 文件名
 };
 
 /**

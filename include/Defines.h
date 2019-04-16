@@ -3,7 +3,7 @@
 #define DEFINES
 
 #define Error -1
-#define DISK_FILE_NAME "myDisk.img"
+#define DISK_FILE_NAME "../myDisk.img"
 
 /**
  * 目录项结构体 32 Bytes 

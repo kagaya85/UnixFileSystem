@@ -158,12 +158,12 @@ void Format::InitDiskInode()
     
     /* 初始配置 */
     inode.d_mode = Inode::IRWXU | Inode::IFDIR;
-    inode.d_nlink = 0;
+    inode.d_nlink = 1;
     inode.d_uid = 0;
     inode.d_gid = 0;
     inode.d_atime = 0;  
     inode.d_mtime = 0;
-    inode.d_size = 0;   // 目录文件的size指目录下所有文件的总大小？
+    inode.d_size = 0;   // 目录文件的大小
 
 
     lseek(f_fd, 3 * Constant::BLOCK_SIZE, SEEK_SET);
@@ -177,6 +177,13 @@ void Format::InitDiskInode()
     for(int i = 0; i < 5; i++)
     {
         inode.d_addr[0] = i;
+        if(i == 0){
+            // 根目录大小
+            inode.d_size = sizeof(DirItem) * 6;
+        }
+        else
+            inode.d_size = sizeof(DirItem) * 2;
+        
         if(write(f_fd, &inode, sizeof(inode)) < 64)
         {
             perror("inode init error");

@@ -97,9 +97,51 @@ void SecondFS::mkdir()
 void SecondFS::ls()
 {
 	User& u = Kernel::Instance().GetUser();
-	Inode* pInode;
+	BufferManager& bufMgr = Kernel::Instance().GetBufferManager();
+    Inode* pInode;
+    Buf* pBuf;
+    DirectoryEntry dent;
 
 	pInode = u.u_cdir;  // 当前目录Inode
+    u.u_IOParam.m_Offset = 0;
+		/* 设置为目录项个数 ，含空白的目录项*/
+    u.u_IOParam.m_Count = pInode->i_size / (DirectoryEntry::DIRSIZ + 4);
+    pBuf = NULL;
+    
+    while (true)
+    {
+        /* 对目录项已经搜索完毕 */
+        if (0 == u.u_IOParam.m_Count) {
+            if (NULL != pBuf) {
+                bufMgr.Brelse(pBuf);
+            }
+        }
+
+        /* 已读完目录文件的当前盘块，需要读入下一目录项数据盘块 */
+        if (0 == u.u_IOParam.m_Offset % Inode::BLOCK_SIZE) {
+            if (NULL != pBuf) {
+                bufMgr.Brelse(pBuf);
+            }
+            /* 计算要读的物理盘块号 */
+            int phyBlkno = pInode->Bmap(u.u_IOParam.m_Offset / Inode::BLOCK_SIZE);
+            pBuf = bufMgr.Bread(pInode->i_dev, phyBlkno);
+        }
+
+        /* 读取下一目录项至dent */
+        int* src = (int*)(pBuf->b_addr + (u.u_IOParam.m_Offset % Inode::BLOCK_SIZE));
+        Utility::DWordCopy(src, (int*)&dent, sizeof(DirectoryEntry) / sizeof(int));
+        u.u_IOParam.m_Offset += (DirectoryEntry::DIRSIZ + 4);
+        u.u_IOParam.m_Count--;  // ???????????
+
+        /* 如果是空闲目录项，记录该项位于目录文件中偏移量 */
+        if ( 0 == u.u_dent.m_ino )
+        {
+            /* 跳过空闲目录项 */
+            continue;
+        }
+    }
+
+	g_InodeTable.IPut(pInode);
 
     return;
 }

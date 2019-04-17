@@ -1,4 +1,4 @@
-#include "../include/DiskDriver.h"
+#include "DiskDriver.h"
 #include "FileSystem.h"
 #include <cstdio>
 #include <sys/types.h>    
@@ -8,6 +8,24 @@
 #include <fcntl.h>
 
 using namespace std;
+/* 定义块设备表devtab的实例。为系统中ATA硬盘设置一个块设备表。*/
+Devtab g_Atab;
+
+Devtab::Devtab()
+{
+	this->d_active = 0;
+	this->d_errcnt = 0;
+	this->b_forw = NULL;
+	this->b_back = NULL;
+	this->d_actf = NULL;
+	this->d_actl = NULL;
+}
+
+Devtab::~Devtab()
+{
+	//nothing to do here
+}
+
 
 DiskDriver::DiskDriver()
 {
@@ -36,6 +54,17 @@ int DiskDriver::Initialize()
         cerr << "Open disk file error" << endl;
         exit(-1);
     }
+    else
+    {
+        cout << "Disk File Loaded." << endl;
+    }
+    
+    this->d_tab = &g_Atab;
+	if(this->d_tab != NULL)
+	{
+		this->d_tab->b_forw = (Buf *)this->d_tab;
+		this->d_tab->b_back = (Buf *)this->d_tab;
+	}
 }
 
 /**
@@ -45,8 +74,21 @@ int DiskDriver::ReadFromDisk(Buf* bp)
 {
     unsigned char* b_addr = bp->b_addr;
     int bln = bp->b_blkno;
+    int ret;
     lseek(d_diskfileFd, bln * Constant::BLOCK_SIZE, SEEK_SET);
-    read(d_diskfileFd, b_addr, Constant::BLOCK_SIZE);
+    if((ret = read(d_diskfileFd, b_addr, Constant::BLOCK_SIZE)) < Constant::BLOCK_SIZE)
+    {
+        cerr << "Read Block " << bln << " Error." << endl;
+        perror("Error");
+        exit(-1);
+    }
+    else
+    {
+#ifdef DEBUG
+		std::cout << "Block " << bp->b_dev << ':' << bln << " load " << ret << " Bytes." << std::endl;
+#endif
+    }
+    
 }
 
 /**

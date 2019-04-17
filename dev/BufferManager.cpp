@@ -80,6 +80,7 @@ loop:
 		*/
 		if(bp->b_flags & Buf::B_BUSY)
 		{
+			std::cerr << "Block " << dev << ':' << blkno << " Busy." <<std::endl;
 			bp->b_flags |= Buf::B_WANTED;
 			goto loop;
 		}
@@ -91,6 +92,7 @@ loop:
 	/* 如果自由队列为空 */
 	if(this->bFreeList.av_forw == &this->bFreeList)
 	{
+		std::cerr << "FreeList is None." << std::endl;
 		this->bFreeList.b_flags |= Buf::B_WANTED;
 		goto loop;
 	}
@@ -99,7 +101,7 @@ loop:
 	bp = this->bFreeList.av_forw;
 	this->NotAvail(bp);
 
-	/* 如果该字符块是延迟写，将其异步写到磁盘上 */
+	/* 如果该字符块是延迟写，将其写到磁盘上 */
 	if(bp->b_flags & Buf::B_DELWRI)
 	{
 		bp->b_flags |= Buf::B_ASYNC;
@@ -169,23 +171,29 @@ void BufferManager::IODone(Buf* bp)
  */
 Buf* BufferManager::Bread(short dev, int blkno)
 {
+#ifdef DEBUG
+	std::cout << "Prepare to read Block " << dev << ':' << blkno << std::endl;
+#endif
 	Buf* bp;
 	/* 根据设备号，字符块号申请缓存 */
 	bp = this->GetBlk(dev, blkno);
-	// /* 如果在设备队列中找到所需缓存，即B_DONE已设置，就不需进行I/O操作 */
+	/* 如果在设备队列中找到所需缓存，即B_DONE已设置，就不需进行I/O操作 */
 	if(bp->b_flags & Buf::B_DONE)
 	{
+#ifdef DEBUG
+		std::cout << "Block " << dev << ':' << blkno << " is loaded." << std::endl;
+#endif
 		return bp;
 	}
 	/* 没有找到相应缓存，构成I/O读请求块 */
 	bp->b_flags |= Buf::B_READ;
 	bp->b_wcount = BufferManager::BUFFER_SIZE;
+#ifdef DEBUG
+		std::cout << "Block " << dev << ':' << blkno << " isn't loaded." << std::endl;
+#endif
 
-	/* 
-	 * 将I/O请求块送入相应设备I/O请求队列，如无其它I/O请求，则将立即执行本次I/O请求；
-	 */
 	this->m_DiskDriver->ReadFromDisk(bp);
-
+	this->IODone(bp);
 	return bp;
 }
 

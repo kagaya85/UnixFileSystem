@@ -2,10 +2,11 @@
 #include "Utility.h"
 #include "DiskDriver.h"
 #include "Kernel.h"
+#include <iomanip>
 /*==============================class Inode===================================*/
 /*	预读块的块号，对普通文件这是预读块所在的物理块号。对硬盘而言，这是当前物理块（扇区）的下一个物理块（扇区）*/
 // int Inode::rablock = 0;
-
+using namespace std;
 /* 内存打开 i节点*/
 Inode::Inode()
 {
@@ -682,4 +683,26 @@ void Inode::ICopy(Buf *bp, int inumber)
 	{
 		this->i_addr[i] = dInode.d_addr[i];
 	}
+}
+
+void Inode::IInfo()
+{
+	cout << "===============INode Info===============" << endl;
+	cout << hex << left << setw(30) << "状态的标志位：" << setw(5) << this->i_flag << endl;
+	cout << hex << left << setw(30) << "文件工作方式信息：" << setw(5) << this->i_mode << endl;
+	cout.unsetf(ios::hex);
+	cout << left << setw(30) << "引用计数：" << setw(5) << this->i_count << endl;
+	cout << left << setw(30) << "文件联结计数：" << setw(5) << this->i_nlink << endl;
+	
+	cout << left << setw(30) << "外存inode所在设备号：" << setw(5) << this->i_dev << endl;
+	cout << left << setw(30) << "外存inode区中的编号：" << setw(5) << this->i_number << endl;
+	
+	cout << left << setw(30) << "uid：" << setw(5) << this->i_uid << endl;	
+	cout << left << setw(30) << "gid：" << setw(5) << this->i_gid << endl;
+	
+	cout << left << setw(30) << "文件大小（Byte）：" << setw(5) << this->i_size << endl;	
+	cout << left << setw(30) << "索引表首项i_addr[0]" << setw(5) << this->i_addr[0] << endl;
+	cout << "========================================" << endl;
+
+	return;
 }

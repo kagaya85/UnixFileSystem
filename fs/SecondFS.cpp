@@ -8,10 +8,10 @@
  * Modified By: kagaya (kagaya85@outlook.com>)
  */
 
-#include "../include/SecondFS.h"
+#include "SecondFS.h"
 #include "Kernel.h"
 #include <iostream>
-#include <string>
+#include <string.h>
 
 using namespace std;
 
@@ -44,18 +44,25 @@ int main()
  */
 SecondFS::SecondFS()
 {
+	cout << "SecondFS Loading..." << endl;
 	Kernel::Instance().Initialize();	
 	Kernel::Instance().GetFileSystem().LoadSuperBlock();
-	cout << "secondFS Loaded......OK\n" << endl;
-
+    cout << "SecondFS Loaded......OK." << endl;
 	/*  初始化rootDirInode和用户当前工作目录，以便NameI()正常工作 */
 	FileManager& fileMgr = Kernel::Instance().GetFileManager();
 	fileMgr.rootDirInode = g_InodeTable.IGet(DiskDriver::ROOTDEV, Constant::ROOTINO);
-	fileMgr.rootDirInode->i_flag &= (~Inode::ILOCK);
-
+    fileMgr.rootDirInode->i_flag &= (~Inode::ILOCK);
+    cout << "rootDirInode Loaded." << endl;
+#ifdef DEBUG
+    fileMgr.rootDirInode->IInfo();
+#endif
 	User& us = Kernel::Instance().GetUser();
 	us.u_cdir = g_InodeTable.IGet(DiskDriver::ROOTDEV, Constant::ROOTINO);
 	us.u_cdir->i_flag &= (~Inode::ILOCK);
+    cout << "u_cdir inode Loaded." << endl;
+#ifdef DEBUG
+    us.u_cdir->IInfo();
+#endif
 	Utility::StringCopy("/", us.u_curdir);
 }
 
@@ -71,7 +78,7 @@ int SecondFS::prompt()
 {
     string command;
 	User& u = Kernel::Instance().GetUser();
-    cout << "[kagaya@localhost]" << u.u_curdir << "# ";
+    cout << "[kagaya@localhost](" << u.u_curdir << ")# ";
     getline(cin, command);
     
     if(command == "creat")
@@ -106,16 +113,16 @@ void SecondFS::ls()
 	User& u = Kernel::Instance().GetUser();
 	BufferManager& bufMgr = Kernel::Instance().GetBufferManager();
     Inode* pInode;
-    Buf* pBuf;
+    Buf* pBuf = NULL;
     DirectoryEntry dent;
     int count = 0;
 
 	pInode = u.u_cdir;  // 当前目录Inode
-    u.u_IOParam.m_Offset = 0;
+
+    u.u_IOParam.m_Offset = 0;   // 设置为已读取的字节数
 		/* 设置为目录项个数 ，含空白的目录项*/
     u.u_IOParam.m_Count = pInode->i_size / (DirectoryEntry::DIRSIZ + 4);
-    pBuf = NULL;
-    
+
     while (true)
     {
         /* 对目录项已经遍历完毕 */
@@ -140,25 +147,35 @@ void SecondFS::ls()
         int* src = (int*)(pBuf->b_addr + (u.u_IOParam.m_Offset % Inode::BLOCK_SIZE));
         Utility::DWordCopy(src, (int*)&dent, sizeof(DirectoryEntry) / sizeof(int));
         u.u_IOParam.m_Offset += (DirectoryEntry::DIRSIZ + 4);
-        u.u_IOParam.m_Count--;  // ???????????
+        u.u_IOParam.m_Count--; 
+// #ifdef DEBUG
+//     cout << "dent.m_ino: " << dent.m_ino << endl;
+//     cout << "dent.m_name: " << dent.m_name << endl; 
+// #endif
 
         /* 如果是空闲目录项，记录该项位于目录文件中偏移量 */
         if ( 0 == dent.m_ino )
         {
             /* 跳过空闲目录项 */
+            // cout << 1 << endl;
+            continue;
+        }
+
+        if (!strcmp(dent.m_name, ".") || !strcmp(dent.m_name, ".."))
+        {
+            // 默认跳过 . ..
+            // cout << 2 << endl;
             continue;
         }
         else
         {
-            cout << dent.m_name;
             count++;
-            if(count % 5 == 0)
+            if(count % 6 == 0)
                 cout << endl;
+            cout << dent.m_name << ' ';
         }
     }
-
-	// g_InodeTable.IPut(pInode);
-
+    cout << endl;
     return;
 }
 

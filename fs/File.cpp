@@ -32,16 +32,16 @@ int OpenFiles::AllocFreeSlot()
 	
 	for(i = 0; i < OpenFiles::NOFILES; i++)
 	{
-		/* ½ø³Ì´ò¿ªÎÄ¼şÃèÊö·û±íÖĞÕÒµ½¿ÕÏĞÏî£¬Ôò·µ»ØÖ® */
+		/* è¿›ç¨‹æ‰“å¼€æ–‡ä»¶æè¿°ç¬¦è¡¨ä¸­æ‰¾åˆ°ç©ºé—²é¡¹ï¼Œåˆ™è¿”å›ä¹‹ */
 		if(this->ProcessOpenFileTable[i] == NULL)
 		{
-			/* ÉèÖÃºËĞÄÕ»ÏÖ³¡±£»¤ÇøÖĞµÄEAX¼Ä´æÆ÷µÄÖµ£¬¼´ÏµÍ³µ÷ÓÃ·µ»ØÖµ */
+			/* è®¾ç½®æ ¸å¿ƒæ ˆç°åœºä¿æŠ¤åŒºä¸­çš„EAXå¯„å­˜å™¨çš„å€¼ï¼Œå³ç³»ç»Ÿè°ƒç”¨è¿”å›å€¼ */
 			u.u_ar0[User::EAX] = i;
 			return i;
 		}
 	}
 
-	u.u_ar0[User::EAX] = -1;   /* Open1£¬ĞèÒªÒ»¸ö±êÖ¾¡£µ±´ò¿ªÎÄ¼ş½á¹¹´´½¨Ê§°ÜÊ±£¬¿ÉÒÔ»ØÊÕÏµÍ³×ÊÔ´*/
+	u.u_ar0[User::EAX] = -1;   /* Open1ï¼Œéœ€è¦ä¸€ä¸ªæ ‡å¿—ã€‚å½“æ‰“å¼€æ–‡ä»¶ç»“æ„åˆ›å»ºå¤±è´¥æ—¶ï¼Œå¯ä»¥å›æ”¶ç³»ç»Ÿèµ„æº*/
 	u.u_error = User::ErrorCode::MYEMFILE;
 	return -1;
 }
@@ -56,7 +56,7 @@ File* OpenFiles::GetF(int fd)
 	File* pFile;
 	User& u = Kernel::Instance().GetUser();
 	
-	/* Èç¹û´ò¿ªÎÄ¼şÃèÊö·ûµÄÖµ³¬³öÁË·¶Î§ */
+	/* å¦‚æœæ‰“å¼€æ–‡ä»¶æè¿°ç¬¦çš„å€¼è¶…å‡ºäº†èŒƒå›´ */
 	if(fd < 0 || fd >= OpenFiles::NOFILES)
 	{
 		u.u_error = User::ErrorCode::MYEBADF;
@@ -69,7 +69,7 @@ File* OpenFiles::GetF(int fd)
 		u.u_error = User::ErrorCode::MYEBADF;
 	}
 
-	return pFile;	/* ¼´Ê¹pFile==NULLÒ²·µ»ØËü£¬ÓÉµ÷ÓÃGetFµÄº¯ÊıÀ´ÅĞ¶Ï·µ»ØÖµ */
+	return pFile;	/* å³ä½¿pFile==NULLä¹Ÿè¿”å›å®ƒï¼Œç”±è°ƒç”¨GetFçš„å‡½æ•°æ¥åˆ¤æ–­è¿”å›å€¼ */
 }
 
 void OpenFiles::SetF(int fd, File* pFile)
@@ -78,7 +78,7 @@ void OpenFiles::SetF(int fd, File* pFile)
 	{
 		return;
 	}
-	/* ½ø³Ì´ò¿ªÎÄ¼şÃèÊö·ûÖ¸ÏòÏµÍ³´ò¿ªÎÄ¼ş±íÖĞÏàÓ¦µÄFile½á¹¹ */
+	/* è¿›ç¨‹æ‰“å¼€æ–‡ä»¶æè¿°ç¬¦æŒ‡å‘ç³»ç»Ÿæ‰“å¼€æ–‡ä»¶è¡¨ä¸­ç›¸åº”çš„Fileç»“æ„ */
 	this->ProcessOpenFileTable[fd] = pFile;
 }
 

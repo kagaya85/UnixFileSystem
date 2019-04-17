@@ -124,6 +124,10 @@ public:
 	 */
 	void ICopy(Buf* bp, int inumber);
 	/* Members */
+	/**
+	 * 打应inode信息
+	 */
+	void IInfo();
 public:
 	unsigned int i_flag;	/* 状态的标志位，定义见enum INodeFlag */
 	unsigned int i_mode;	/* 文件工作方式信息 */

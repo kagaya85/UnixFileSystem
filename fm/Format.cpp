@@ -97,11 +97,11 @@ void Format::InitSuperBolck()
     spb.s_reserved[21] = 0xFFFFFFFF;    // 填充 
 
     cout << "==========SuperBlock Info==========" << endl;
-    cout << std::left << std::setw(30) << "Inode区占用盘块数：" << spb.s_isize << endl;
-    cout << std::left << std::setw(30) << "data区占用盘块数：" << spb.s_dsize << endl;
-    cout << std::left << std::setw(30) << "盘块总数：" << spb.s_fsize << endl;
-    cout << std::left << std::setw(30) << "Inode区起始盘块：" << 3 << endl;
-    cout << std::left << std::setw(30) << "数据区起始盘块：" << spb.s_dstart << endl;
+    cout << std::left << std::setw(30) << "盘块总数：" << left << setw(5) << spb.s_fsize << endl;
+    cout << std::left << std::setw(30) << "Inode区占用盘块数：" << left << setw(5) << spb.s_isize << endl;
+    cout << std::left << std::setw(30) << "data区占用盘块数：" << left << setw(5) << spb.s_dsize << endl;
+    cout << std::left << std::setw(30) << "Inode区起始盘块：" << left << setw(5) << 3 << endl;
+    cout << std::left << std::setw(30) << "data区起始盘块：" << left << setw(5) << spb.s_dstart << endl;
 
     if(write(f_fd, &spb, Constant::BLOCK_SIZE) < Constant::BLOCK_SIZE)
     {
@@ -124,7 +124,7 @@ void Format::InitBitmap()
      * 注意为小字序
      */
     char ione[2] = {0x3F, 0x00}; // inodemap预分配6bit
-    char done[2] = {0x1F, 0x00}; // datamap预分配5bit
+    char done[2] = {0x3F, 0x00}; // datamap预分配6bit
     char zero[4094] = {0};
     
     // lseek(f_fd, FileSystem::BLOCK_SIZE, SEEK_SET);
@@ -155,19 +155,20 @@ void Format::InitDiskInode()
 {
     /* 初始化5+1个外存inode */
     DiskInode inode;
-    
+    int dstart = f_dsize - f_dzone_size;
     /* 初始配置 */
     inode.d_mode = Inode::IRWXU | Inode::IFDIR;
     inode.d_nlink = 1;
     inode.d_uid = 0;
     inode.d_gid = 0;
-    inode.d_atime = 0;  
-    inode.d_mtime = 0;
+    inode.d_atime = time(NULL);  
+    inode.d_mtime = time(NULL);
     inode.d_size = 0;   // 目录文件的大小
-
 
     lseek(f_fd, 3 * Constant::BLOCK_SIZE, SEEK_SET);
 
+    for(int i = 0; i < 10; i++)
+        inode.d_addr[i] = 0;    // 初始化
     /* 0号inode不分配盘块, 代表不存在的inode */
     if(write(f_fd, &inode, sizeof(inode)) < 64)
     {
@@ -176,7 +177,7 @@ void Format::InitDiskInode()
     /* 5个目录inode */
     for(int i = 0; i < 5; i++)
     {
-        inode.d_addr[0] = i;
+        inode.d_addr[0] = dstart + i;
         if(i == 0){
             // 根目录大小
             inode.d_size = sizeof(DirItem) * 6;
@@ -184,6 +185,14 @@ void Format::InitDiskInode()
         else
             inode.d_size = sizeof(DirItem) * 2;
         
+        cout << "===============inode " << i << " ===============" << endl;
+        cout << hex << left << setw(30) << "d_mode：" << inode.d_mode << endl;
+        cout.unsetf(ios::hex);
+        cout << left << setw(30) << "最后访问时间 d_atime：" << inode.d_atime << endl;
+        cout << left << setw(30) << "最后访问时间 d_mtime：" << inode.d_mtime << endl;
+        cout << left << setw(30) << "d_size：" << inode.d_size << endl;
+        cout << left << setw(30) << "d_addr[0]：" << inode.d_addr[0] << endl;
+
         if(write(f_fd, &inode, sizeof(inode)) < 64)
         {
             perror("inode init error");
@@ -194,9 +203,9 @@ void Format::InitDiskInode()
 
 void Format::InitData()
 {
-    // 对0 ~ 4号数据盘块写入目录文件
+    // 对0, 1 ~ 5号数据盘块写入目录文件
     // datazone 初始盘块号
-    int base_offset = 3 + f_izone_size; // 3 (superblock databitmap inodebitmap) + inode区盘块数量
+    int dstart = f_dsize - f_dzone_size;
     DirItem root[6] = {
         {1, "."},
         {1, ".."},
@@ -212,16 +221,19 @@ void Format::InitData()
     };
 
     // 写入root目录文件
-    lseek(f_fd, base_offset * Constant::BLOCK_SIZE, SEEK_SET);
-    if(write(f_fd, &root, sizeof(root)) < sizeof(root))
+    int ret;
+    lseek(f_fd, dstart * Constant::BLOCK_SIZE, SEEK_SET);
+    if((ret = write(f_fd, &root, sizeof(root))) < sizeof(root))
     {
         perror("root dir block write error");
     }
+    else
+        cout << "root file 写入 " << ret << endl;
 
-    for(int i = 2; i <= 5; i++)
+    for(int i = 0; i < 4; i++)  // 四个子目录
     {
-        lseek(f_fd, (base_offset + i - 1) * Constant::BLOCK_SIZE, SEEK_SET);
-        sub_dir[0].inode_num = i;   // 子目录的当前inode号
+        lseek(f_fd, (dstart + i + 1) * Constant::BLOCK_SIZE, SEEK_SET);
+        sub_dir[0].inode_num = i + 2;   // 子目录的当前inode号
         if(write(f_fd, &sub_dir, sizeof(sub_dir)) < sizeof(sub_dir))
         {
             perror("sub_dir block write error");

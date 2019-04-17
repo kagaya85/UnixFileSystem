@@ -2,12 +2,13 @@
 #include "Kernel.h"
 #include "BufferManager.h"
 #include <time.h>
-
+#include <iomanip>
 /* 系统全局超级块SuperBlock对象 */
 SuperBlock g_spb;
 
 extern InodeTable g_InodeTable;
 
+using namespace std;
 /*==============================class Mount===================================*/
 Mount::Mount()
 {
@@ -68,6 +69,7 @@ void FileSystem::LoadSuperBlock()
 
 	int* p = (int *)&g_spb;
 
+	std::cout << "Load SuperBlock..." << std::endl;
 	pBuf = bufMgr.Bread(DiskDriver::ROOTDEV, Constant::SUPER_BLOCK_SECTOR_NUMBER);
 	Utility::DWordCopy((int *)pBuf->b_addr, p, 32);	// 我的super block 只有128个字节
 	bufMgr.Brelse(pBuf);
@@ -84,6 +86,17 @@ void FileSystem::LoadSuperBlock()
 	g_spb.s_ilock = 0;
 	g_spb.s_ronly = 0;
 	g_spb.s_time = time(0);
+	cout << "SuperBlock Loaded OK." << endl;
+	cout << "===============SuperBlock Info===============" << endl;
+    cout << left << setw(30) << "盘块总数：" << setw(5) << g_spb.s_fsize << endl;
+    cout << left << setw(30) << "Inode区占用盘块数：" << setw(5) << g_spb.s_isize << endl;
+    cout << left << setw(30) << "data区占用盘块数：" << setw(5) << g_spb.s_dsize << endl;
+    cout << left << setw(30) << "Inode区起始盘块：" << setw(5) << 3 << endl;
+    cout << left << setw(30) << "data区起始盘块：" << setw(5) << g_spb.s_dstart << endl;
+    cout << left << setw(30) << "空闲Inode盘块数量：" << setw(5) << g_spb.s_nifree << endl;
+    cout << left << setw(30) << "空闲data盘块数量：" << setw(5) << g_spb.s_ndfree << endl;
+	cout << "=============================================" <<  endl;
+
 }
 
 SuperBlock* FileSystem::GetFS(short dev)
@@ -272,7 +285,7 @@ Buf* FileSystem::Alloc(short dev)
 	 * 或者分配到的空闲磁盘块编号不属于数据盘块区域中(由BadBlock()检查)，
 	 * 都意味着分配空闲磁盘块操作失败。
 	 */
-	if(blkno < 0)	// 0号磁盘块在用 0号inode不用
+	if(blkno <= 0)	// 0号数据块与0号inode不用
 	{
 		sb->s_ndfree = 0;
 		std::cerr << "No Space On "<< dev << " !" << std::endl;
@@ -490,13 +503,18 @@ Inode* InodeTable::IGet(short dev, int inumber)
 {
 	Inode* pInode;
 	User& u = Kernel::Instance().GetUser();
-
+#ifdef DEBUG
+	cout << "Start load Inode" << dev << ":" << inumber << endl;
+#endif
 	while(true)
 	{
 		/* 检查指定设备dev中编号为inumber的外存Inode是否有内存拷贝 */
 		int index = this->IsLoaded(dev, inumber);
 		if(index >= 0)	/* 找到内存拷贝 */
 		{
+#ifdef DEBUG
+			cout << "Inode " << dev << ":" << inumber << " is loaded." << endl;
+#endif
 			pInode = &(this->m_Inode[index]);
 			/* 如果该内存Inode被上锁 */
 			if( pInode->i_flag & Inode::ILOCK )
@@ -537,6 +555,9 @@ Inode* InodeTable::IGet(short dev, int inumber)
 		}
 		else	/* 没有Inode的内存拷贝，则分配一个空闲内存Inode */
 		{
+#ifdef DEBUG
+			cout << "Inode " << dev << ":" << inumber << " isn't loaded." << endl;
+#endif
 			pInode = this->GetFreeInode();
 			/* 若内存Inode表已满，分配空闲Inode失败 */
 			if(NULL == pInode)

@@ -2,6 +2,15 @@
 #include "Kernel.h"
 #include "Utility.h"
 
+User::User()
+{
+	/* 进程时间相关 */
+	u_utime = 0;
+	u_stime= 0;
+	u_cutime = 0;
+	u_cstime = 0;
+}
+
 void User::Setuid()
 {
 	short uid = this->u_arg[0];

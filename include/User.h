@@ -6,16 +6,16 @@
 #include "FileManager.h"
 
 /*
- * @comment ¸ÃÀàÓëUnixv6ÖĞ struct user½á¹¹¶ÔÓ¦£¬Òò´ËÖ»¸Ä±ä
- * ÀàÃû£¬²»ĞŞ¸Ä³ÉÔ±½á¹¹Ãû×Ö£¬¹ØÓÚÊı¾İÀàĞÍµÄ¶ÔÓ¦¹ØÏµÈçÏÂ:
+ * @comment è¯¥ç±»ä¸Unixv6ä¸­ struct userç»“æ„å¯¹åº”ï¼Œå› æ­¤åªæ”¹å˜
+ * ç±»åï¼Œä¸ä¿®æ”¹æˆå‘˜ç»“æ„åå­—ï¼Œå…³äºæ•°æ®ç±»å‹çš„å¯¹åº”å…³ç³»å¦‚ä¸‹:
  */
 class User
 {
 public:
-	static const int EAX = 0;	/* u.u_ar0[EAX]£»·ÃÎÊÏÖ³¡±£»¤ÇøÖĞEAX¼Ä´æÆ÷µÄÆ«ÒÆÁ¿ */
+	static const int EAX = 0;	/* u.u_ar0[EAX]ï¼›è®¿é—®ç°åœºä¿æŠ¤åŒºä¸­EAXå¯„å­˜å™¨çš„åç§»é‡ */
 	
 	/* u_error's Error Code */
-	/* 1~32 À´×Ôlinux µÄÄÚºË´úÂëÖĞµÄ/usr/include/asm/errno.h, ÆäÓàfor V6++ */
+	/* 1~32 æ¥è‡ªlinux çš„å†…æ ¸ä»£ç ä¸­çš„/usr/include/asm/errno.h, å…¶ä½™for V6++ */
 	enum ErrorCode
 	{
 		MYNOERROR	= 0,	/* No error */
@@ -54,9 +54,9 @@ public:
 		MYENOSYS	= 100
 	};
 
-	static const int NSIG = 32;	/* ĞÅºÅ¸öÊı */
+	static const int NSIG = 32;	/* ä¿¡å·ä¸ªæ•° */
 
-	/* p_sigÖĞ½ÓÊÜµ½µÄĞÅºÅ¶¨Òå */
+	/* p_sigä¸­æ¥å—åˆ°çš„ä¿¡å·å®šä¹‰ */
 	static const int SIGNUL = 0;	/* No Signal Received */
 	static const int SIGHUP = 1;	/* Hangup (kill controlling terminal) */
 	static const int SIGINT = 2;    /* Interrupt from keyboard */
@@ -91,10 +91,10 @@ public:
 	static const int SIGSYS = 31; /* invalid sys call */
 
 public:
-	unsigned long u_rsav[2];	/* ÓÃÓÚ±£´æespÓëebpÖ¸Õë */
-	unsigned long u_ssav[2];	/* ÓÃÓÚ¶ÔespºÍebpÖ¸ÕëµÄ¶ş´Î±£»¤ */
-	// Process* u_procp;			/* Ö¸Ïò¸Ãu½á¹¹¶ÔÓ¦µÄProcess½á¹¹ */
-	/* ĞÂÌí¼Ó±äÁ¿£¬ÓÃÓÚÌæ´úÔ­ÓĞµÄ±äÁ¿
+	unsigned long u_rsav[2];	/* ç”¨äºä¿å­˜espä¸ebpæŒ‡é’ˆ */
+	unsigned long u_ssav[2];	/* ç”¨äºå¯¹espå’ŒebpæŒ‡é’ˆçš„äºŒæ¬¡ä¿æŠ¤ */
+	// Process* u_procp;			/* æŒ‡å‘è¯¥uç»“æ„å¯¹åº”çš„Processç»“æ„ */
+	/* æ–°æ·»åŠ å˜é‡ï¼Œç”¨äºæ›¿ä»£åŸæœ‰çš„å˜é‡
 	 * int u_uisa[16]
 	 * int u_uisd[16]
 	 * u_tsize
@@ -103,72 +103,73 @@ public:
 	 */
 	// MemoryDescriptor u_MemoryDescriptor;
 
-	/* ÏµÍ³µ÷ÓÃÏà¹Ø³ÉÔ± */
-	unsigned long long	*u_ar0;		/* Ö¸ÏòºËĞÄÕ»ÏÖ³¡±£»¤ÇøÖĞEAX¼Ä´æÆ÷
-								´æ·ÅµÄÕ»µ¥Ôª£¬±¾×Ö¶Î´æ·Å¸ÃÕ»µ¥ÔªµÄµØÖ·¡£
-								ÔÚV6ÖĞr0´æ·ÅÏµÍ³µ÷ÓÃµÄ·µ»ØÖµ¸øÓÃ»§³ÌĞò£¬
-								x86Æ½Ì¨ÉÏÊ¹ÓÃEAX´æ·Å·µ»ØÖµ£¬Ìæ´úu.u_ar0[R0] */
+	/* ç³»ç»Ÿè°ƒç”¨ç›¸å…³æˆå‘˜ */
+	unsigned long long	*u_ar0;		/* æŒ‡å‘æ ¸å¿ƒæ ˆç°åœºä¿æŠ¤åŒºä¸­EAXå¯„å­˜å™¨
+								å­˜æ”¾çš„æ ˆå•å…ƒï¼Œæœ¬å­—æ®µå­˜æ”¾è¯¥æ ˆå•å…ƒçš„åœ°å€ã€‚
+								åœ¨V6ä¸­r0å­˜æ”¾ç³»ç»Ÿè°ƒç”¨çš„è¿”å›å€¼ç»™ç”¨æˆ·ç¨‹åºï¼Œ
+								x86å¹³å°ä¸Šä½¿ç”¨EAXå­˜æ”¾è¿”å›å€¼ï¼Œæ›¿ä»£u.u_ar0[R0] */
 
-	long long u_arg[5];				/* ´æ·Åµ±Ç°ÏµÍ³µ÷ÓÃ²ÎÊı 64bitµØÖ·¶ÔÓ¦Îª long long */
-	char* u_dirp;				/* ÏµÍ³µ÷ÓÃ²ÎÊı(Ò»°ãÓÃÓÚPathname)µÄÖ¸Õë */
+	long long u_arg[5];				/* å­˜æ”¾å½“å‰ç³»ç»Ÿè°ƒç”¨å‚æ•° 64bitåœ°å€å¯¹åº”ä¸º long long */
+	char* u_dirp;				/* ç³»ç»Ÿè°ƒç”¨å‚æ•°(ä¸€èˆ¬ç”¨äºPathname)çš„æŒ‡é’ˆ */
 
-	/* Ê±¼äÏà¹Ø³ÉÔ± */
-	int u_utime;		/* ½ø³ÌÓÃ»§Ì¬Ê±¼ä */
-	int u_stime;		/* ½ø³ÌºËĞÄÌ¬Ê±¼ä */
-	int u_cutime;		/* ×Ó½ø³ÌÓÃ»§Ì¬Ê±¼ä×ÜºÍ */
-	int u_cstime;		/* ×Ó½ø³ÌºËĞÄÌ¬Ê±¼ä×ÜºÍ */
+	/* æ—¶é—´ç›¸å…³æˆå‘˜ */
+	int u_utime;		/* è¿›ç¨‹ç”¨æˆ·æ€æ—¶é—´ */
+	int u_stime;		/* è¿›ç¨‹æ ¸å¿ƒæ€æ—¶é—´ */
+	int u_cutime;		/* å­è¿›ç¨‹ç”¨æˆ·æ€æ—¶é—´æ€»å’Œ */
+	int u_cstime;		/* å­è¿›ç¨‹æ ¸å¿ƒæ€æ—¶é—´æ€»å’Œ */
 	
-	// /* ĞÅºÅ´¦ÀíÏà¹Ø³ÉÔ± */
-	// unsigned long u_signal[NSIG];	/* ĞÅºÅ´¦Àí±í */
-	// unsigned long u_qsav[2];		/* ÓÃÓÚ½ÓÊÕµ½ĞÅºÅÊ±Ö±½Ó´ÓSleep()º¯ÊıÌø»ØÖÁTrap() */
-	// bool u_intflg;		/* ÏµÍ³µ÷ÓÃÆÚ¼äÊÇ·ñÊÜµ½ĞÅºÅ´ò¶Ï £¬1±íÊ¾±»´ò¶Ï¡¢0±íÊ¾Î´±»´ò¶Ï*/
+	// /* ä¿¡å·å¤„ç†ç›¸å…³æˆå‘˜ */
+	// unsigned long u_signal[NSIG];	/* ä¿¡å·å¤„ç†è¡¨ */
+	// unsigned long u_qsav[2];		/* ç”¨äºæ¥æ”¶åˆ°ä¿¡å·æ—¶ç›´æ¥ä»Sleep()å‡½æ•°è·³å›è‡³Trap() */
+	// bool u_intflg;		/* ç³»ç»Ÿè°ƒç”¨æœŸé—´æ˜¯å¦å—åˆ°ä¿¡å·æ‰“æ–­ ï¼Œ1è¡¨ç¤ºè¢«æ‰“æ–­ã€0è¡¨ç¤ºæœªè¢«æ‰“æ–­*/
 	
-	/* ÎÄ¼şÏµÍ³Ïà¹Ø³ÉÔ± */
-	Inode* u_cdir;		/* Ö¸Ïòµ±Ç°Ä¿Â¼µÄInodeÖ¸Õë */
-	Inode* u_pdir;		/* Ö¸Ïò¸¸Ä¿Â¼µÄInodeÖ¸Õë */
+	/* æ–‡ä»¶ç³»ç»Ÿç›¸å…³æˆå‘˜ */
+	Inode* u_cdir;		/* æŒ‡å‘å½“å‰ç›®å½•çš„InodeæŒ‡é’ˆ */
+	Inode* u_pdir;		/* æŒ‡å‘çˆ¶ç›®å½•çš„InodeæŒ‡é’ˆ */
 
-	DirectoryEntry u_dent;					/* µ±Ç°Ä¿Â¼µÄÄ¿Â¼Ïî */
-	char u_dbuf[DirectoryEntry::DIRSIZ];	/* µ±Ç°Â·¾¶·ÖÁ¿ */
-	char u_curdir[128];						/* µ±Ç°¹¤×÷Ä¿Â¼ÍêÕûÂ·¾¶ */
+	DirectoryEntry u_dent;					/* å½“å‰ç›®å½•çš„ç›®å½•é¡¹ */
+	char u_dbuf[DirectoryEntry::DIRSIZ];	/* å½“å‰è·¯å¾„åˆ†é‡ */
+	char u_curdir[128];						/* å½“å‰å·¥ä½œç›®å½•å®Œæ•´è·¯å¾„ */
 
-	ErrorCode u_error;			/* ´æ·Å´íÎóÂë */
-	int u_segflg;				/* ±íÃ÷I/OÕë¶ÔÓÃ»§»òÏµÍ³¿Õ¼ä */
+	ErrorCode u_error;			/* å­˜æ”¾é”™è¯¯ç  */
+	int u_segflg;				/* è¡¨æ˜I/Oé’ˆå¯¹ç”¨æˆ·æˆ–ç³»ç»Ÿç©ºé—´ */
 
-	/* ½ø³ÌµÄÓÃ»§±êÊ¶ */
-	short u_uid;		/* ÓĞĞ§ÓÃ»§ID */
-	short u_gid;		/* ÓĞĞ§×éID */
-	short u_ruid;		/* ÕæÊµÓÃ»§ID */
-	short u_rgid;		/* ÕæÊµ×éID */
+	/* è¿›ç¨‹çš„ç”¨æˆ·æ ‡è¯† */
+	short u_uid;		/* æœ‰æ•ˆç”¨æˆ·ID */
+	short u_gid;		/* æœ‰æ•ˆç»„ID */
+	short u_ruid;		/* çœŸå®ç”¨æˆ·ID */
+	short u_rgid;		/* çœŸå®ç»„ID */
 	
-	/* ÎÄ¼şÏµÍ³Ïà¹Ø³ÉÔ± */
-	OpenFiles u_ofiles;		/* ½ø³Ì´ò¿ªÎÄ¼şÃèÊö·û±í¶ÔÏó */
+	/* æ–‡ä»¶ç³»ç»Ÿç›¸å…³æˆå‘˜ */
+	OpenFiles u_ofiles;		/* è¿›ç¨‹æ‰“å¼€æ–‡ä»¶æè¿°ç¬¦è¡¨å¯¹è±¡ */
 
-	/* ÎÄ¼şI/O²Ù×÷ */
-	IOParameter u_IOParam;	/* ¼ÇÂ¼µ±Ç°¶Á¡¢Ğ´ÎÄ¼şµÄÆ«ÒÆÁ¿£¬ÓÃ»§Ä¿±êÇøÓòºÍÊ£Óà×Ö½ÚÊı²ÎÊı */
+	/* æ–‡ä»¶I/Oæ“ä½œ */
+	IOParameter u_IOParam;	/* è®°å½•å½“å‰è¯»ã€å†™æ–‡ä»¶çš„åç§»é‡ï¼Œç”¨æˆ·ç›®æ ‡åŒºåŸŸå’Œå‰©ä½™å­—èŠ‚æ•°å‚æ•° */
 
 	/* Member Functions */
 public:
-	User(){
-		u_uid = 0;
-		u_gid = 0;
-	};
+	User();
 	~User(){};
-	/* ¸ù¾İÏµÍ³µ÷ÓÃ²ÎÊıuidÉèÖÃÓĞĞ§ÓÃ»§ID£¬ÕæÊµÓÃ»§ID£¬½ø³ÌÓÃ»§ID(p_uid) */
+	/**
+	 * ç”¨æˆ·åˆå§‹åŒ–
+	 */
+	void Initialize();
+	/* æ ¹æ®ç³»ç»Ÿè°ƒç”¨å‚æ•°uidè®¾ç½®æœ‰æ•ˆç”¨æˆ·IDï¼ŒçœŸå®ç”¨æˆ·IDï¼Œè¿›ç¨‹ç”¨æˆ·ID(p_uid) */
 	void Setuid();
 
-	/* »ñÈ¡ÓÃ»§ID£¬µÍ16±ÈÌØÎªÕæÊµÓÃ»§ID(u_ruid)£¬¸ß16±ÈÌØÎªÓĞĞ§ÓÃ»§ID(u_uid) */
+	/* è·å–ç”¨æˆ·IDï¼Œä½16æ¯”ç‰¹ä¸ºçœŸå®ç”¨æˆ·ID(u_ruid)ï¼Œé«˜16æ¯”ç‰¹ä¸ºæœ‰æ•ˆç”¨æˆ·ID(u_uid) */
 	void Getuid();
 
-	/* ¸ù¾İÏµÍ³µ÷ÓÃ²ÎÊıgidÉèÖÃÓĞĞ§×éID£¬ÕæÊµ×éID */
+	/* æ ¹æ®ç³»ç»Ÿè°ƒç”¨å‚æ•°gidè®¾ç½®æœ‰æ•ˆç»„IDï¼ŒçœŸå®ç»„ID */
 	void Setgid();
 
-	/* »ñÈ¡×éID, µÍ16±ÈÌØÎªÕæÊµ×éID(u_rgid)£¬¸ß16±ÈÌØÎªÓĞĞ§×éID(u_gid) */
+	/* è·å–ç»„ID, ä½16æ¯”ç‰¹ä¸ºçœŸå®ç»„ID(u_rgid)ï¼Œé«˜16æ¯”ç‰¹ä¸ºæœ‰æ•ˆç»„ID(u_gid) */
 	void Getgid();
 
-	/* »ñÈ¡µ±Ç°ÓÃ»§¹¤×÷Ä¿Â¼ */
+	/* è·å–å½“å‰ç”¨æˆ·å·¥ä½œç›®å½• */
 	void Pwd();
 
-	/* ¼ì²éµ±Ç°ÓÃ»§ÊÇ·ñÊÇ³¬¼¶ÓÃ»§ */
+	/* æ£€æŸ¥å½“å‰ç”¨æˆ·æ˜¯å¦æ˜¯è¶…çº§ç”¨æˆ· */
 	bool SUser();
 };
 

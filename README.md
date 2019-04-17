@@ -143,3 +143,11 @@ This project mainly has two executable program:
 > `makefile`
 >
 > 编译纠错
+>
+> 2019年4月17日
+>
+> 修复了各种bug。。。
+>
+> 基本功能已经实现
+>
+> ls命令实现

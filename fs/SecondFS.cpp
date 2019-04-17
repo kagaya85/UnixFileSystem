@@ -59,6 +59,11 @@ SecondFS::SecondFS()
 	Utility::StringCopy("/", us.u_curdir);
 }
 
+SecondFS::~SecondFS()
+{
+    /* nothing to do */
+}
+
 /*
  * 实现一个命令提示符 
  */

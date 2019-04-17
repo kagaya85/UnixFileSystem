@@ -21,8 +21,8 @@
 #include <sys/types.h>    
 #include <sys/stat.h>
 #include <unistd.h>
+#include "Defines.h"
 
-#define DISK_FILE_NAME "myDisk.img"
 /*
  * 格式化myDisk.img
  * (0) (1) (2) (3 ~ ) ()

@@ -213,7 +213,7 @@ Inode* FileSystem::IAlloc(short dev)
 		else	/* 如果该Inode已被占用，使用bitmap理论上不应该有这种情况 */	
 		{
 			g_InodeTable.IPut(pNode);
-			this->setBitmap(this->m_Mount[0].ib_addr, ino, 1);	// 将对应位置1
+			this->SetBitmap(this->m_Mount[0].ib_addr, ino, 1);	// 将对应位置1
 			continue;	/* while循环 */
 		}
 	}
@@ -235,7 +235,7 @@ void FileSystem::IFree(short dev, int number)
 		return;
 	}
 	
-	this->setBitmap(this->m_Mount[0].ib_addr, number, 0);	// 将对应位置0
+	this->SetBitmap(this->m_Mount[0].ib_addr, number, 0);	// 将对应位置0
 	sb->s_nifree++;
 
 	/* 设置SuperBlock被修改标志 */
@@ -322,7 +322,7 @@ void FileSystem::Free(short dev, int blkno)
 		return;
 	}
 
-	this->setBitmap(this->m_Mount[0].db_addr, blkno, 0);	
+	this->SetBitmap(this->m_Mount[0].db_addr, blkno, 0);	
 	sb->s_ndfree++;	/* SuperBlock中空闲盘快数+1 */
 	sb->s_fmod = 1;
 }
@@ -410,7 +410,7 @@ unsigned char* FileSystem::LoadBimap(int type)
 	}
 }
 
-int AllocFreeBit(unsigned char* bitmap)
+int FileSystem::AllocFreeBit(unsigned char* bitmap)
 {
 	unsigned char* p = bitmap;
 	unsigned long long* lp = (unsigned long long*)p;
@@ -448,7 +448,7 @@ int AllocFreeBit(unsigned char* bitmap)
 	return -1;
 }
 
-void setBitmap(unsigned char* bitmap, int num, bool bit)
+void FileSystem::SetBitmap(unsigned char* bitmap, int num, bool bit)
 {
 	unsigned char* p = bitmap;
 	int offset;

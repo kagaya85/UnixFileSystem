@@ -11,10 +11,11 @@ all : $(TARGET)
 
 $(TARGET) : $(OBJ)
 	$(CC) $(CFLAGS) $^ -o $@
+	mv format ../
 
 $(OBJDIR)/Format.o : Format.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 	
 .PHONY : clean
 clean : 
-	$(RM) $(OBJ) $(TARGET)
+	$(RM) $(OBJ)

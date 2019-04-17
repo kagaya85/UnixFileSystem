@@ -117,7 +117,7 @@ public:
 	/**
 	 * 将指定块号对应得bit位值位
 	 */
-	void setBitmap(unsigned char* bitmap, int num, bool bit);
+	void SetBitmap(unsigned char* bitmap, int num, bool bit);
 
 private:
 	/* 

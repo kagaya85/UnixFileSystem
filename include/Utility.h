@@ -6,7 +6,7 @@
  * 由于使用了编译选项-fno-builtin，
  * 编译器不提供这些常量的定义。
  */
-#define NULL	0
+// #define NULL	0
 
 /* 保存系统时间信息的结构体 */
 struct SystemTime
@@ -39,7 +39,7 @@ class Utility
 public:
 	static void MemCopy(unsigned long src, unsigned long des, unsigned int count);
 	
-	static void StringCopy(char* src, char* dst);
+	static void StringCopy(const char* src, char* dst);
 
 	static int StringLength(char* pString);
 	
@@ -52,7 +52,7 @@ public:
 	/* 设置参数dev中的次设备号部分，低8比特 */
 	static short SetMinor(short dev, const short vlaue);
 	/* 输出错误信息，然后死循环 */
-	static void Panic(char* str);
+	static void Panic(const char* const str);
 
 	/* 以src为源地址，dst为目的地址，复制count个双字 */
 	static void DWordCopy(int* src, int* dst, int count);

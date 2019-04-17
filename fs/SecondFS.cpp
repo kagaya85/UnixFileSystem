@@ -15,6 +15,8 @@
 
 using namespace std;
 
+extern InodeTable g_InodeTable;
+
 int main()
 {
     int inum;   // 指令序号
@@ -101,6 +103,7 @@ void SecondFS::ls()
     Inode* pInode;
     Buf* pBuf;
     DirectoryEntry dent;
+    int count = 0;
 
 	pInode = u.u_cdir;  // 当前目录Inode
     u.u_IOParam.m_Offset = 0;
@@ -110,11 +113,12 @@ void SecondFS::ls()
     
     while (true)
     {
-        /* 对目录项已经搜索完毕 */
+        /* 对目录项已经遍历完毕 */
         if (0 == u.u_IOParam.m_Count) {
             if (NULL != pBuf) {
                 bufMgr.Brelse(pBuf);
             }
+            break;
         }
 
         /* 已读完目录文件的当前盘块，需要读入下一目录项数据盘块 */
@@ -134,14 +138,21 @@ void SecondFS::ls()
         u.u_IOParam.m_Count--;  // ???????????
 
         /* 如果是空闲目录项，记录该项位于目录文件中偏移量 */
-        if ( 0 == u.u_dent.m_ino )
+        if ( 0 == dent.m_ino )
         {
             /* 跳过空闲目录项 */
             continue;
         }
+        else
+        {
+            cout << dent.m_name;
+            count++;
+            if(count % 5 == 0)
+                cout << endl;
+        }
     }
 
-	g_InodeTable.IPut(pInode);
+	// g_InodeTable.IPut(pInode);
 
     return;
 }

@@ -11,7 +11,7 @@ void Utility::MemCopy(unsigned long src, unsigned long des, unsigned int count)
 		pdes[i] = psrc[i];
 }
 
-void Utility::StringCopy(char* src, char* dst)
+void Utility::StringCopy(const char* src, char* dst)
 {
 	while ( (*dst++ = *src++) != 0 ) ;
 }
@@ -59,10 +59,10 @@ short Utility::SetMinor(short dev, const short value)
 	return dev;
 }
 
-void Utility::Panic(char* str)
+void Utility::Panic(const char* const str)
 {
 	printf("%s\n", str);
-	cerr << "Exit" << endl;
+	std::cerr << "Exit" << std::endl;
 	exit(-1);
 }
 

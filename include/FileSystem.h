@@ -6,6 +6,7 @@
 #include "BufferManager.h"
 #include "SuperBlock.h"
 #include "Defines.h"
+#include "File.h"
 
 /*
  * 文件系统装配块(Mount)的定义。

@@ -3,6 +3,13 @@
 
 using namespace std;
 
+Kernel Kernel::instance;
+DiskDriver g_DiskDriver;
+BufferManager g_BufferManager;
+FileSystem g_FileSystem;
+FileManager g_FileManager;
+User g_User;
+
 Kernel::Kernel()
 {
 }

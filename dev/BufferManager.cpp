@@ -272,8 +272,8 @@ void BufferManager::GetError(Buf* bp)
 	
 	if (bp->b_flags & Buf::B_ERROR)
 	{
-		u.u_error = User::EIO;
-		cerr << "Get error!" << endl;
+		u.u_error = User::MYEIO;
+		std::cerr << "Get error!" << std::endl;
 	}
 	return;
 }
@@ -293,7 +293,7 @@ Buf* BufferManager::InCore(short adev, int blkno)
 	Buf* bp;
 	Devtab* dp;
 
-	dp = this->m_DiskDriver.d_tab;
+	dp = this->m_DiskDriver->d_tab;
 	for(bp = dp->b_forw; bp != (Buf *)dp; bp = bp->b_forw)
 	{
 		if(bp->b_blkno == blkno && bp->b_dev == adev)

@@ -1,9 +1,9 @@
 # ！bash
 OBJDIR = ../obj
-INCLUDE = ../includ
+INCLUDE = ../include
 TARGET = $(OBJDIR)/File.o $(OBJDIR)/FileManager.o $(OBJDIR)/FileSystem.o \
 	$(OBJDIR)/INode.o $(OBJDIR)/SecondFS.o
-CFLAGS = -I"$(INCLUDE)" -std=c++11 -c
+CFLAGS = -I"$(INCLUDE)" -Wwrite-strings -std=c++11 -c
 CC = g++
 RM = -rm -f
 

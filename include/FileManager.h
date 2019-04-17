@@ -219,9 +219,9 @@ public:
 	/* Functions */
 public:
 	/* Constructors */
-	DirectoryEntry(){};
+	DirectoryEntry();
 	/* Destructors */
-	~DirectoryEntry(){};
+	~DirectoryEntry();
 
 	/* Members */
 public:

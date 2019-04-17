@@ -1,7 +1,7 @@
 # ！bash
 TARGET = format SecondFS
 OBJDIR = ./obj
-INCLUDE = ./includ
+INCLUDE = ./include
 CFLAGS = 
 CC = g++
 RM = -rm -f
@@ -15,12 +15,12 @@ subDirs : $(SUBDIRS)
 	done
 
 format :  
-	make -C format
+	make -C ./fm
 
-SecondFS : $(OBJDIR)/SecondFS.o $(OBJDIR)BufferManager.o $(OBJDIR)/DiskDriver.o \
-	$(OBJDIR)File.o $(OBJDIR)/FileManager.o $(OBJDIR)/FileSystem.o \
+SecondFS : $(OBJDIR)/SecondFS.o $(OBJDIR)/BufferManager.o $(OBJDIR)/DiskDriver.o \
+	$(OBJDIR)/File.o $(OBJDIR)/FileManager.o $(OBJDIR)/FileSystem.o \
 	$(OBJDIR)/INode.o $(OBJDIR)/SecondFS.o \
-	$(OBJDIR)Kernel.o $(OBJDIR)/User.o $(OBJDIR)/Utility.o
+	$(OBJDIR)/Kernel.o $(OBJDIR)/User.o $(OBJDIR)/Utility.o
 	$(CC) $(CFLAGS) $^ -o $@
 
 .PHONY : clean

@@ -104,12 +104,12 @@ public:
 	// MemoryDescriptor u_MemoryDescriptor;
 
 	/* 系统调用相关成员 */
-	unsigned int	*u_ar0;		/* 指向核心栈现场保护区中EAX寄存器
+	unsigned long long	*u_ar0;		/* 指向核心栈现场保护区中EAX寄存器
 								存放的栈单元，本字段存放该栈单元的地址。
 								在V6中r0存放系统调用的返回值给用户程序，
 								x86平台上使用EAX存放返回值，替代u.u_ar0[R0] */
 
-	int u_arg[5];				/* 存放当前系统调用参数 */
+	long long u_arg[5];				/* 存放当前系统调用参数 64bit地址对应为 long long */
 	char* u_dirp;				/* 系统调用参数(一般用于Pathname)的指针 */
 
 	/* 时间相关成员 */

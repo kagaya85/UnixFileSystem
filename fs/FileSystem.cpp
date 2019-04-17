@@ -3,6 +3,10 @@
 #include "BufferManager.h"
 #include <time.h>
 
+/* 系统全局超级块SuperBlock对象 */
+SuperBlock g_spb;
+
+extern InodeTable g_InodeTable;
 
 /*==============================class Mount===================================*/
 Mount::Mount()

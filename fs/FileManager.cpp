@@ -1,8 +1,10 @@
-#include "../include/FileManager.h"
+#include "FileManager.h"
 #include "Kernel.h"
 #include "Utility.h"
 #include "File.h"
 
+/*  å®šä¹‰å†…å­˜Inodeè¡¨çš„å®ä¾‹ */
+InodeTable g_InodeTable;
 /*==========================class FileManager===============================*/
 FileManager::FileManager()
 {
@@ -24,8 +26,8 @@ void FileManager::Initialize()
 }
 
 /*
- * ¹¦ÄÜ£º´ò¿ªÎÄ¼ş
- * Ğ§¹û£º½¨Á¢´ò¿ªÎÄ¼ş½á¹¹£¬ÄÚ´æi½Úµã¿ªËø ¡¢i_count ÎªÕıÊı£¨i_count ++£©
+ * åŠŸèƒ½ï¼šæ‰“å¼€æ–‡ä»¶
+ * æ•ˆæœï¼šå»ºç«‹æ‰“å¼€æ–‡ä»¶ç»“æ„ï¼Œå†…å­˜ièŠ‚ç‚¹å¼€é” ã€i_count ä¸ºæ­£æ•°ï¼ˆi_count ++ï¼‰
  * */
 void FileManager::Open()
 {
@@ -33,7 +35,7 @@ void FileManager::Open()
 	User& u = Kernel::Instance().GetUser();
 
 	pInode = this->NameI(NextChar, FileManager::OPEN);	/* 0 = Open, not create */
-	/* Ã»ÓĞÕÒµ½ÏàÓ¦µÄInode */
+	/* æ²¡æœ‰æ‰¾åˆ°ç›¸åº”çš„Inode */
 	if ( NULL == pInode )
 	{
 		return;
@@ -42,8 +44,8 @@ void FileManager::Open()
 }
 
 /*
- * ¹¦ÄÜ£º´´½¨Ò»¸öĞÂµÄÎÄ¼ş
- * Ğ§¹û£º½¨Á¢´ò¿ªÎÄ¼ş½á¹¹£¬ÄÚ´æi½Úµã¿ªËø ¡¢i_count ÎªÕıÊı£¨Ó¦¸ÃÊÇ 1£©
+ * åŠŸèƒ½ï¼šåˆ›å»ºä¸€ä¸ªæ–°çš„æ–‡ä»¶
+ * æ•ˆæœï¼šå»ºç«‹æ‰“å¼€æ–‡ä»¶ç»“æ„ï¼Œå†…å­˜ièŠ‚ç‚¹å¼€é” ã€i_count ä¸ºæ­£æ•°ï¼ˆåº”è¯¥æ˜¯ 1ï¼‰
  * */
 void FileManager::Creat()
 {
@@ -51,16 +53,16 @@ void FileManager::Creat()
 	User& u = Kernel::Instance().GetUser();
 	unsigned int newACCMode = u.u_arg[1] & (Inode::IRWXU|Inode::IRWXG|Inode::IRWXO);
 
-	/* ËÑË÷Ä¿Â¼µÄÄ£Ê½Îª1£¬±íÊ¾´´½¨£»Èô¸¸Ä¿Â¼²»¿ÉĞ´£¬³ö´í·µ»Ø */
+	/* æœç´¢ç›®å½•çš„æ¨¡å¼ä¸º1ï¼Œè¡¨ç¤ºåˆ›å»ºï¼›è‹¥çˆ¶ç›®å½•ä¸å¯å†™ï¼Œå‡ºé”™è¿”å› */
 	pInode = this->NameI(NextChar, FileManager::CREATE);
-	/* Ã»ÓĞÕÒµ½ÏàÓ¦µÄInode£¬»òNameI³ö´í */
+	/* æ²¡æœ‰æ‰¾åˆ°ç›¸åº”çš„Inodeï¼Œæˆ–NameIå‡ºé”™ */
 	if ( NULL == pInode )
 	{
 		if(u.u_error)
 			return;
-		/* ´´½¨Inode */
+		/* åˆ›å»ºInode */
 		pInode = this->MakNode( newACCMode & (~Inode::ISVTX) );
-		/* ´´½¨Ê§°Ü */
+		/* åˆ›å»ºå¤±è´¥ */
 		if ( NULL == pInode )
 		{
 			std::cerr << "Creat Error" << std::endl;
@@ -68,51 +70,51 @@ void FileManager::Creat()
 		}
 
 		/* 
-		 * Èç¹ûËùÏ£ÍûµÄÃû×Ö²»´æÔÚ£¬Ê¹ÓÃ²ÎÊıtrf = 2À´µ÷ÓÃopen1()¡£
-		 * ²»ĞèÒª½øĞĞÈ¨ÏŞ¼ì²é£¬ÒòÎª¸Õ¸Õ½¨Á¢µÄÎÄ¼şµÄÈ¨ÏŞºÍ´«Èë²ÎÊımode
-		 * Ëù±íÊ¾µÄÈ¨ÏŞÄÚÈİÊÇÒ»ÑùµÄ¡£
+		 * å¦‚æœæ‰€å¸Œæœ›çš„åå­—ä¸å­˜åœ¨ï¼Œä½¿ç”¨å‚æ•°trf = 2æ¥è°ƒç”¨open1()ã€‚
+		 * ä¸éœ€è¦è¿›è¡Œæƒé™æ£€æŸ¥ï¼Œå› ä¸ºåˆšåˆšå»ºç«‹çš„æ–‡ä»¶çš„æƒé™å’Œä¼ å…¥å‚æ•°mode
+		 * æ‰€è¡¨ç¤ºçš„æƒé™å†…å®¹æ˜¯ä¸€æ ·çš„ã€‚
 		 */
 		this->Open1(pInode, File::FWRITE, 2);
 	}
 	else
 	{
-		/* Èç¹ûNameI()ËÑË÷µ½ÒÑ¾­´æÔÚÒª´´½¨µÄÎÄ¼ş£¬ÔòÇå¿Õ¸ÃÎÄ¼ş£¨ÓÃËã·¨ITrunc()£©¡£UIDÃ»ÓĞ¸Ä±ä
-		 * Ô­À´UNIXµÄÉè¼ÆÊÇÕâÑù£ºÎÄ¼ş¿´ÉÏÈ¥¾ÍÏñĞÂ½¨µÄÎÄ¼şÒ»Ñù¡£È»¶ø£¬ĞÂÎÄ¼şËùÓĞÕßºÍĞí¿ÉÈ¨·½Ê½Ã»±ä¡£
-		 * Ò²¾ÍÊÇËµcreatÖ¸¶¨µÄRWX±ÈÌØÎŞĞ§¡£
-		 * µËÈØÈÏÎªÕâÊÇ²»ºÏÀíµÄ£¬Ó¦¸Ã¸Ä±ä¡£
-		 * ÏÖÔÚµÄÊµÏÖ£ºcreatÖ¸¶¨µÄRWX±ÈÌØÓĞĞ§ */
+		/* å¦‚æœNameI()æœç´¢åˆ°å·²ç»å­˜åœ¨è¦åˆ›å»ºçš„æ–‡ä»¶ï¼Œåˆ™æ¸…ç©ºè¯¥æ–‡ä»¶ï¼ˆç”¨ç®—æ³•ITrunc()ï¼‰ã€‚UIDæ²¡æœ‰æ”¹å˜
+		 * åŸæ¥UNIXçš„è®¾è®¡æ˜¯è¿™æ ·ï¼šæ–‡ä»¶çœ‹ä¸Šå»å°±åƒæ–°å»ºçš„æ–‡ä»¶ä¸€æ ·ã€‚ç„¶è€Œï¼Œæ–°æ–‡ä»¶æ‰€æœ‰è€…å’Œè®¸å¯æƒæ–¹å¼æ²¡å˜ã€‚
+		 * ä¹Ÿå°±æ˜¯è¯´creatæŒ‡å®šçš„RWXæ¯”ç‰¹æ— æ•ˆã€‚
+		 * é‚“è“‰è®¤ä¸ºè¿™æ˜¯ä¸åˆç†çš„ï¼Œåº”è¯¥æ”¹å˜ã€‚
+		 * ç°åœ¨çš„å®ç°ï¼šcreatæŒ‡å®šçš„RWXæ¯”ç‰¹æœ‰æ•ˆ */
 		this->Open1(pInode, File::FWRITE, 1);
 		pInode->i_mode |= newACCMode;
 	}
 }
 
 /* 
-* trf == 0ÓÉopenµ÷ÓÃ
-* trf == 1ÓÉcreatµ÷ÓÃ£¬creatÎÄ¼şµÄÊ±ºòËÑË÷µ½Í¬ÎÄ¼şÃûµÄÎÄ¼ş
-* trf == 2ÓÉcreatµ÷ÓÃ£¬creatÎÄ¼şµÄÊ±ºòÎ´ËÑË÷µ½Í¬ÎÄ¼şÃûµÄÎÄ¼ş£¬ÕâÊÇÎÄ¼ş´´½¨Ê±¸üÒ»°ãµÄÇé¿ö
-* mode²ÎÊı£º´ò¿ªÎÄ¼şÄ£Ê½£¬±íÊ¾ÎÄ¼ş²Ù×÷ÊÇ ¶Á¡¢Ğ´»¹ÊÇ¶ÁĞ´
+* trf == 0ç”±openè°ƒç”¨
+* trf == 1ç”±creatè°ƒç”¨ï¼Œcreatæ–‡ä»¶çš„æ—¶å€™æœç´¢åˆ°åŒæ–‡ä»¶åçš„æ–‡ä»¶
+* trf == 2ç”±creatè°ƒç”¨ï¼Œcreatæ–‡ä»¶çš„æ—¶å€™æœªæœç´¢åˆ°åŒæ–‡ä»¶åçš„æ–‡ä»¶ï¼Œè¿™æ˜¯æ–‡ä»¶åˆ›å»ºæ—¶æ›´ä¸€èˆ¬çš„æƒ…å†µ
+* modeå‚æ•°ï¼šæ‰“å¼€æ–‡ä»¶æ¨¡å¼ï¼Œè¡¨ç¤ºæ–‡ä»¶æ“ä½œæ˜¯ è¯»ã€å†™è¿˜æ˜¯è¯»å†™
 */
 void FileManager::Open1(Inode* pInode, int mode, int trf)
 {
 	User& u = Kernel::Instance().GetUser();
 
 	/* 
-	 * ¶ÔËùÏ£ÍûµÄÎÄ¼şÒÑ´æÔÚµÄÇé¿öÏÂ£¬¼´trf == 0»òtrf == 1½øĞĞÈ¨ÏŞ¼ì²é
-	 * Èç¹ûËùÏ£ÍûµÄÃû×Ö²»´æÔÚ£¬¼´trf == 2£¬²»ĞèÒª½øĞĞÈ¨ÏŞ¼ì²é£¬ÒòÎª¸Õ½¨Á¢
-	 * µÄÎÄ¼şµÄÈ¨ÏŞºÍ´«ÈëµÄ²ÎÊımodeµÄËù±íÊ¾µÄÈ¨ÏŞÄÚÈİÊÇÒ»ÑùµÄ¡£
+	 * å¯¹æ‰€å¸Œæœ›çš„æ–‡ä»¶å·²å­˜åœ¨çš„æƒ…å†µä¸‹ï¼Œå³trf == 0æˆ–trf == 1è¿›è¡Œæƒé™æ£€æŸ¥
+	 * å¦‚æœæ‰€å¸Œæœ›çš„åå­—ä¸å­˜åœ¨ï¼Œå³trf == 2ï¼Œä¸éœ€è¦è¿›è¡Œæƒé™æ£€æŸ¥ï¼Œå› ä¸ºåˆšå»ºç«‹
+	 * çš„æ–‡ä»¶çš„æƒé™å’Œä¼ å…¥çš„å‚æ•°modeçš„æ‰€è¡¨ç¤ºçš„æƒé™å†…å®¹æ˜¯ä¸€æ ·çš„ã€‚
 	 */
 	if (trf != 2)
 	{
 		if ( mode & File::FREAD )
 		{
-			/* ¼ì²é¶ÁÈ¨ÏŞ */
+			/* æ£€æŸ¥è¯»æƒé™ */
 			this->Access(pInode, Inode::IREAD);
 		}
 		if ( mode & File::FWRITE )
 		{
-			/* ¼ì²éĞ´È¨ÏŞ */
+			/* æ£€æŸ¥å†™æƒé™ */
 			this->Access(pInode, Inode::IWRITE);
-			/* ÏµÍ³µ÷ÓÃÈ¥Ğ´Ä¿Â¼ÎÄ¼şÊÇ²»ÔÊĞíµÄ */
+			/* ç³»ç»Ÿè°ƒç”¨å»å†™ç›®å½•æ–‡ä»¶æ˜¯ä¸å…è®¸çš„ */
 			if ( (pInode->i_mode & Inode::IFMT) == Inode::IFDIR )
 			{
 				u.u_error = User::MYEISDIR;
@@ -126,46 +128,46 @@ void FileManager::Open1(Inode* pInode, int mode, int trf)
 		return;
 	}
 
-	/* ÔÚcreatÎÄ¼şµÄÊ±ºòËÑË÷µ½Í¬ÎÄ¼şÃûµÄÎÄ¼ş£¬ÊÍ·Å¸ÃÎÄ¼şËùÕ¼¾İµÄËùÓĞÅÌ¿é */
+	/* åœ¨creatæ–‡ä»¶çš„æ—¶å€™æœç´¢åˆ°åŒæ–‡ä»¶åçš„æ–‡ä»¶ï¼Œé‡Šæ”¾è¯¥æ–‡ä»¶æ‰€å æ®çš„æ‰€æœ‰ç›˜å— */
 	if ( 1 == trf )
 	{
 		pInode->ITrunc();
 	}
 
-	/* ½âËøinode! 
-	 * ÏßĞÔÄ¿Â¼ËÑË÷Éæ¼°´óÁ¿µÄ´ÅÅÌ¶ÁĞ´²Ù×÷£¬ÆÚ¼ä½ø³Ì»áÈëË¯¡£
-	 * Òò´Ë£¬½ø³Ì±ØĞëÉÏËø²Ù×÷Éæ¼°µÄi½Úµã¡£Õâ¾ÍÊÇNameIÖĞÖ´ĞĞµÄIGetÉÏËø²Ù×÷¡£
-	 * ĞĞÖÁ´Ë£¬ºóĞø²»ÔÙÓĞ¿ÉÄÜ»áÒıÆğ½ø³ÌÇĞ»»µÄ²Ù×÷£¬¿ÉÒÔ½âËøi½Úµã¡£
+	/* è§£é”inode! 
+	 * çº¿æ€§ç›®å½•æœç´¢æ¶‰åŠå¤§é‡çš„ç£ç›˜è¯»å†™æ“ä½œï¼ŒæœŸé—´è¿›ç¨‹ä¼šå…¥ç¡ã€‚
+	 * å› æ­¤ï¼Œè¿›ç¨‹å¿…é¡»ä¸Šé”æ“ä½œæ¶‰åŠçš„ièŠ‚ç‚¹ã€‚è¿™å°±æ˜¯NameIä¸­æ‰§è¡Œçš„IGetä¸Šé”æ“ä½œã€‚
+	 * è¡Œè‡³æ­¤ï¼Œåç»­ä¸å†æœ‰å¯èƒ½ä¼šå¼•èµ·è¿›ç¨‹åˆ‡æ¢çš„æ“ä½œï¼Œå¯ä»¥è§£é”ièŠ‚ç‚¹ã€‚
 	 */
 	pInode->Prele();
 
-	/* ·ÖÅä´ò¿ªÎÄ¼ş¿ØÖÆ¿éFile½á¹¹ */
+	/* åˆ†é…æ‰“å¼€æ–‡ä»¶æ§åˆ¶å—Fileç»“æ„ */
 	File* pFile = this->m_OpenFileTable->FAlloc();
 	if ( NULL == pFile )
 	{
 		this->m_InodeTable->IPut(pInode);
 		return;
 	}
-	/* ÉèÖÃ´ò¿ªÎÄ¼ş·½Ê½£¬½¨Á¢File½á¹¹ºÍÄÚ´æInodeµÄ¹´Á¬¹ØÏµ */
+	/* è®¾ç½®æ‰“å¼€æ–‡ä»¶æ–¹å¼ï¼Œå»ºç«‹Fileç»“æ„å’Œå†…å­˜Inodeçš„å‹¾è¿å…³ç³» */
 	pFile->f_flag = mode & (File::FREAD | File::FWRITE);
 	pFile->f_inode = pInode;
 
-	/* ÌØÊâÉè±¸´ò¿ªº¯Êı */
+	/* ç‰¹æ®Šè®¾å¤‡æ‰“å¼€å‡½æ•° */
 	pInode->OpenI(mode & File::FWRITE);
 
-	/* Îª´ò¿ª»òÕß´´½¨ÎÄ¼şµÄ¸÷ÖÖ×ÊÔ´¶¼ÒÑ³É¹¦·ÖÅä£¬º¯Êı·µ»Ø */
+	/* ä¸ºæ‰“å¼€æˆ–è€…åˆ›å»ºæ–‡ä»¶çš„å„ç§èµ„æºéƒ½å·²æˆåŠŸåˆ†é…ï¼Œå‡½æ•°è¿”å› */
 	if ( u.u_error == 0 )
 	{
 		return;
 	}
-	else	/* Èç¹û³ö´íÔòÊÍ·Å×ÊÔ´ */
+	else	/* å¦‚æœå‡ºé”™åˆ™é‡Šæ”¾èµ„æº */
 	{
-		/* ÊÍ·Å´ò¿ªÎÄ¼şÃèÊö·û */
+		/* é‡Šæ”¾æ‰“å¼€æ–‡ä»¶æè¿°ç¬¦ */
 		int fd = u.u_ar0[User::EAX];
 		if(fd != -1)
 		{
 			u.u_ofiles.SetF(fd, NULL);
-			/* µİ¼õFile½á¹¹ºÍInodeµÄÒıÓÃ¼ÆÊı ,File½á¹¹Ã»ÓĞËø f_countÎª0¾ÍÊÇÊÍ·ÅFile½á¹¹ÁË*/
+			/* é€’å‡Fileç»“æ„å’ŒInodeçš„å¼•ç”¨è®¡æ•° ,Fileç»“æ„æ²¡æœ‰é” f_countä¸º0å°±æ˜¯é‡Šæ”¾Fileç»“æ„äº†*/
 			pFile->f_count--;
 		}
 		this->m_InodeTable->IPut(pInode);
@@ -177,14 +179,14 @@ void FileManager::Close()
 	User& u = Kernel::Instance().GetUser();
 	int fd = u.u_arg[0];
 
-	/* »ñÈ¡´ò¿ªÎÄ¼ş¿ØÖÆ¿éFile½á¹¹ */
+	/* è·å–æ‰“å¼€æ–‡ä»¶æ§åˆ¶å—Fileç»“æ„ */
 	File* pFile = u.u_ofiles.GetF(fd);
 	if ( NULL == pFile )
 	{
 		return;
 	}
 
-	/* ÊÍ·Å´ò¿ªÎÄ¼şÃèÊö·ûfd£¬µİ¼õFile½á¹¹ÒıÓÃ¼ÆÊı */
+	/* é‡Šæ”¾æ‰“å¼€æ–‡ä»¶æè¿°ç¬¦fdï¼Œé€’å‡Fileç»“æ„å¼•ç”¨è®¡æ•° */
 	u.u_ofiles.SetF(fd, NULL);
 	this->m_OpenFileTable->CloseF(pFile);
 }
@@ -198,10 +200,10 @@ void FileManager::Seek()
 	pFile = u.u_ofiles.GetF(fd);
 	if ( NULL == pFile )
 	{
-		return;  /* ÈôFILE²»´æÔÚ£¬GetFÓĞÉè³ö´íÂë */
+		return;  /* è‹¥FILEä¸å­˜åœ¨ï¼ŒGetFæœ‰è®¾å‡ºé”™ç  */
 	}
 
-	/* ¹ÜµÀÎÄ¼ş²»ÔÊĞíseek */
+	/* ç®¡é“æ–‡ä»¶ä¸å…è®¸seek */
 	if ( pFile->f_flag & File::FPIPE )
 	{
 		u.u_error = User::MYESPIPE;
@@ -210,7 +212,7 @@ void FileManager::Seek()
 
 	int offset = u.u_arg[1];
 
-	/* Èç¹ûu.u_arg[2]ÔÚ3 ~ 5Ö®¼ä£¬ÄÇÃ´³¤¶Èµ¥Î»ÓÉ×Ö½Ú±äÎª512×Ö½Ú */
+	/* å¦‚æœu.u_arg[2]åœ¨3 ~ 5ä¹‹é—´ï¼Œé‚£ä¹ˆé•¿åº¦å•ä½ç”±å­—èŠ‚å˜ä¸º512å­—èŠ‚ */
 	if ( u.u_arg[2] > 2 )
 	{
 		offset = offset << 9;
@@ -219,15 +221,15 @@ void FileManager::Seek()
 
 	switch ( u.u_arg[2] )
 	{
-		/* ¶ÁĞ´Î»ÖÃÉèÖÃÎªoffset */
+		/* è¯»å†™ä½ç½®è®¾ç½®ä¸ºoffset */
 		case 0:
 			pFile->f_offset = offset;
 			break;
-		/* ¶ÁĞ´Î»ÖÃ¼Óoffset(¿ÉÕı¿É¸º) */
+		/* è¯»å†™ä½ç½®åŠ offset(å¯æ­£å¯è´Ÿ) */
 		case 1:
 			pFile->f_offset += offset;
 			break;
-		/* ¶ÁĞ´Î»ÖÃµ÷ÕûÎªÎÄ¼ş³¤¶È¼Óoffset */
+		/* è¯»å†™ä½ç½®è°ƒæ•´ä¸ºæ–‡ä»¶é•¿åº¦åŠ offset */
 		case 2:
 			pFile->f_offset = pFile->f_inode->i_size + offset;
 			break;
@@ -251,7 +253,7 @@ void FileManager::Dup()
 	{
 		return;
 	}
-	/* ÖÁ´Ë·ÖÅäĞÂÃèÊö·ûnewFd³É¹¦ */
+	/* è‡³æ­¤åˆ†é…æ–°æè¿°ç¬¦newFdæˆåŠŸ */
 	u.u_ofiles.SetF(newFd, pFile);
 	pFile->f_count++;
 }
@@ -294,7 +296,7 @@ void FileManager::Stat1(Inode* pInode, unsigned long statBuf)
 	pInode->IUpdate(time(NULL));
 	pBuf = bufMgr.Bread(pInode->i_dev, Constant::INODE_ZONE_START_SECTOR + pInode->i_number / Constant::INODE_NUMBER_PER_SECTOR );
 
-	/* ½«pÖ¸Ïò»º´æÇøÖĞ±àºÅÎªinumberÍâ´æInodeµÄÆ«ÒÆÎ»ÖÃ */
+	/* å°†pæŒ‡å‘ç¼“å­˜åŒºä¸­ç¼–å·ä¸ºinumberå¤–å­˜Inodeçš„åç§»ä½ç½® */
 	unsigned char* p = pBuf->b_addr + (pInode->i_number % Constant::INODE_NUMBER_PER_SECTOR) * sizeof(DiskInode);
 	Utility::DWordCopy( (int *)p, (int *)statBuf, sizeof(DiskInode)/sizeof(int) );
 
@@ -303,13 +305,13 @@ void FileManager::Stat1(Inode* pInode, unsigned long statBuf)
 
 void FileManager::Read()
 {
-	/* Ö±½Óµ÷ÓÃRdwr()º¯Êı¼´¿É */
+	/* ç›´æ¥è°ƒç”¨Rdwr()å‡½æ•°å³å¯ */
 	this->Rdwr(File::FREAD);
 }
 
 void FileManager::Write()
 {
-	/* Ö±½Óµ÷ÓÃRdwr()º¯Êı¼´¿É */
+	/* ç›´æ¥è°ƒç”¨Rdwr()å‡½æ•°å³å¯ */
 	this->Rdwr(File::FWRITE);
 }
 
@@ -318,32 +320,32 @@ void FileManager::Rdwr( enum File::FileFlags mode )
 	File* pFile;
 	User& u = Kernel::Instance().GetUser();
 
-	/* ¸ù¾İRead()/Write()µÄÏµÍ³µ÷ÓÃ²ÎÊıfd»ñÈ¡´ò¿ªÎÄ¼ş¿ØÖÆ¿é½á¹¹ */
+	/* æ ¹æ®Read()/Write()çš„ç³»ç»Ÿè°ƒç”¨å‚æ•°fdè·å–æ‰“å¼€æ–‡ä»¶æ§åˆ¶å—ç»“æ„ */
 	pFile = u.u_ofiles.GetF(u.u_arg[0]);	/* fd */
 	if ( NULL == pFile )
 	{
-		/* ²»´æÔÚ¸Ã´ò¿ªÎÄ¼ş£¬GetFÒÑ¾­ÉèÖÃ¹ı³ö´íÂë£¬ËùÒÔÕâÀï²»ĞèÒªÔÙÉèÖÃÁË */
+		/* ä¸å­˜åœ¨è¯¥æ‰“å¼€æ–‡ä»¶ï¼ŒGetFå·²ç»è®¾ç½®è¿‡å‡ºé”™ç ï¼Œæ‰€ä»¥è¿™é‡Œä¸éœ€è¦å†è®¾ç½®äº† */
 		/*	u.u_error = User::EBADF;	*/
 		return;
 	}
 
 
-	/* ¶ÁĞ´µÄÄ£Ê½²»ÕıÈ· */
+	/* è¯»å†™çš„æ¨¡å¼ä¸æ­£ç¡® */
 	if ( (pFile->f_flag & mode) == 0 )
 	{
 		u.u_error = User::MYEACCES;
 		return;
 	}
 
-	u.u_IOParam.m_Base = (unsigned char *)u.u_arg[1];	/* Ä¿±ê»º³åÇøÊ×Ö· */
-	u.u_IOParam.m_Count = u.u_arg[2];		/* ÒªÇó¶Á/Ğ´µÄ×Ö½ÚÊı */
-	u.u_segflg = 0;		/* User Space I/O£¬¶ÁÈëµÄÄÚÈİÒªËÍÊı¾İ¶Î»òÓÃ»§Õ»¶Î */
+	u.u_IOParam.m_Base = (unsigned char *)u.u_arg[1];	/* ç›®æ ‡ç¼“å†²åŒºé¦–å€ */
+	u.u_IOParam.m_Count = u.u_arg[2];		/* è¦æ±‚è¯»/å†™çš„å­—èŠ‚æ•° */
+	u.u_segflg = 0;		/* User Space I/Oï¼Œè¯»å…¥çš„å†…å®¹è¦é€æ•°æ®æ®µæˆ–ç”¨æˆ·æ ˆæ®µ */
 
-	/* ÆÕÍ¨ÎÄ¼ş¶ÁĞ´ £¬»ò¶ÁĞ´ÌØÊâÎÄ¼ş¡£¶ÔÎÄ¼şÊµÊ©»¥³â·ÃÎÊ£¬»¥³âµÄÁ£¶È£ºÃ¿´ÎÏµÍ³µ÷ÓÃ¡£
-	Îª´ËInodeÀàĞèÒªÔö¼ÓÁ½¸ö·½·¨£ºNFlock()¡¢NFrele()¡£
-	Õâ²»ÊÇV6µÄÉè¼Æ¡£read¡¢writeÏµÍ³µ÷ÓÃ¶ÔÄÚ´æi½ÚµãÉÏËøÊÇÎªÁË¸øÊµÊ©IOµÄ½ø³ÌÌá¹©Ò»ÖÂµÄÎÄ¼şÊÓÍ¼¡£*/
+	/* æ™®é€šæ–‡ä»¶è¯»å†™ ï¼Œæˆ–è¯»å†™ç‰¹æ®Šæ–‡ä»¶ã€‚å¯¹æ–‡ä»¶å®æ–½äº’æ–¥è®¿é—®ï¼Œäº’æ–¥çš„ç²’åº¦ï¼šæ¯æ¬¡ç³»ç»Ÿè°ƒç”¨ã€‚
+	ä¸ºæ­¤Inodeç±»éœ€è¦å¢åŠ ä¸¤ä¸ªæ–¹æ³•ï¼šNFlock()ã€NFrele()ã€‚
+	è¿™ä¸æ˜¯V6çš„è®¾è®¡ã€‚readã€writeç³»ç»Ÿè°ƒç”¨å¯¹å†…å­˜ièŠ‚ç‚¹ä¸Šé”æ˜¯ä¸ºäº†ç»™å®æ–½IOçš„è¿›ç¨‹æä¾›ä¸€è‡´çš„æ–‡ä»¶è§†å›¾ã€‚*/
 	pFile->f_inode->NFlock();
-	/* ÉèÖÃÎÄ¼şÆğÊ¼¶ÁÎ»ÖÃ */
+	/* è®¾ç½®æ–‡ä»¶èµ·å§‹è¯»ä½ç½® */
 	u.u_IOParam.m_Offset = pFile->f_offset;
 	if ( File::FREAD == mode )
 	{
@@ -354,29 +356,29 @@ void FileManager::Rdwr( enum File::FileFlags mode )
 		pFile->f_inode->WriteI();
 	}
 
-	/* ¸ù¾İ¶ÁĞ´×ÖÊı£¬ÒÆ¶¯ÎÄ¼ş¶ÁĞ´Æ«ÒÆÖ¸Õë */
+	/* æ ¹æ®è¯»å†™å­—æ•°ï¼Œç§»åŠ¨æ–‡ä»¶è¯»å†™åç§»æŒ‡é’ˆ */
 	pFile->f_offset += (u.u_arg[2] - u.u_IOParam.m_Count);
 	pFile->f_inode->NFrele();
 
-	/* ·µ»ØÊµ¼Ê¶ÁĞ´µÄ×Ö½ÚÊı£¬ĞŞ¸Ä´æ·ÅÏµÍ³µ÷ÓÃ·µ»ØÖµµÄºËĞÄÕ»µ¥Ôª */
+	/* è¿”å›å®é™…è¯»å†™çš„å­—èŠ‚æ•°ï¼Œä¿®æ”¹å­˜æ”¾ç³»ç»Ÿè°ƒç”¨è¿”å›å€¼çš„æ ¸å¿ƒæ ˆå•å…ƒ */
 	u.u_ar0[User::EAX] = u.u_arg[2] - u.u_IOParam.m_Count;
 }
 
 
-/* ·µ»ØNULL±íÊ¾Ä¿Â¼ËÑË÷Ê§°Ü£¬·ñÔòÊÇ¸ùÖ¸Õë£¬Ö¸ÏòÎÄ¼şµÄÄÚ´æ´ò¿ªi½Úµã £¬ÉÏËøµÄÄÚ´æi½Úµã  */
+/* è¿”å›NULLè¡¨ç¤ºç›®å½•æœç´¢å¤±è´¥ï¼Œå¦åˆ™æ˜¯æ ¹æŒ‡é’ˆï¼ŒæŒ‡å‘æ–‡ä»¶çš„å†…å­˜æ‰“å¼€ièŠ‚ç‚¹ ï¼Œä¸Šé”çš„å†…å­˜ièŠ‚ç‚¹  */
 Inode* FileManager::NameI( char (*func)(), enum DirectorySearchMode mode )
 {
 	Inode* pInode;
 	Buf* pBuf;
 	char curchar;
 	char* pChar;
-	int freeEntryOffset;	/* ÒÔ´´½¨ÎÄ¼şÄ£Ê½ËÑË÷Ä¿Â¼Ê±£¬¼ÇÂ¼¿ÕÏĞÄ¿Â¼ÏîµÄÆ«ÒÆÁ¿ */
+	int freeEntryOffset;	/* ä»¥åˆ›å»ºæ–‡ä»¶æ¨¡å¼æœç´¢ç›®å½•æ—¶ï¼Œè®°å½•ç©ºé—²ç›®å½•é¡¹çš„åç§»é‡ */
 	User& u = Kernel::Instance().GetUser();
 	BufferManager& bufMgr = Kernel::Instance().GetBufferManager();
 
 	/* 
-	 * Èç¹û¸ÃÂ·¾¶ÊÇ'/'¿ªÍ·µÄ£¬´Ó¸ùÄ¿Â¼¿ªÊ¼ËÑË÷£¬
-	 * ·ñÔò´Ó½ø³Ìµ±Ç°¹¤×÷Ä¿Â¼¿ªÊ¼ËÑË÷¡£
+	 * å¦‚æœè¯¥è·¯å¾„æ˜¯'/'å¼€å¤´çš„ï¼Œä»æ ¹ç›®å½•å¼€å§‹æœç´¢ï¼Œ
+	 * å¦åˆ™ä»è¿›ç¨‹å½“å‰å·¥ä½œç›®å½•å¼€å§‹æœç´¢ã€‚
 	 */
 	pInode = u.u_cdir;
 	if ( '/' == (curchar = (*func)()) )
@@ -384,53 +386,53 @@ Inode* FileManager::NameI( char (*func)(), enum DirectorySearchMode mode )
 		pInode = this->rootDirInode;
 	}
 
-	/* ¼ì²é¸ÃInodeÊÇ·ñÕıÔÚ±»Ê¹ÓÃ£¬ÒÔ¼°±£Ö¤ÔÚÕû¸öÄ¿Â¼ËÑË÷¹ı³ÌÖĞ¸ÃInode²»±»ÊÍ·Å */
+	/* æ£€æŸ¥è¯¥Inodeæ˜¯å¦æ­£åœ¨è¢«ä½¿ç”¨ï¼Œä»¥åŠä¿è¯åœ¨æ•´ä¸ªç›®å½•æœç´¢è¿‡ç¨‹ä¸­è¯¥Inodeä¸è¢«é‡Šæ”¾ */
 	this->m_InodeTable->IGet(pInode->i_dev, pInode->i_number);
 
-	/* ÔÊĞí³öÏÖ////a//b ÕâÖÖÂ·¾¶ ÕâÖÖÂ·¾¶µÈ¼ÛÓÚ/a/b */
+	/* å…è®¸å‡ºç°////a//b è¿™ç§è·¯å¾„ è¿™ç§è·¯å¾„ç­‰ä»·äº/a/b */
 	while ( '/' == curchar )
 	{
 		curchar = (*func)();
 	}
-	/* Èç¹ûÊÔÍ¼¸ü¸ÄºÍÉ¾³ıµ±Ç°Ä¿Â¼ÎÄ¼şÔò³ö´í */
+	/* å¦‚æœè¯•å›¾æ›´æ”¹å’Œåˆ é™¤å½“å‰ç›®å½•æ–‡ä»¶åˆ™å‡ºé”™ */
 	if ( '\0' == curchar && mode != FileManager::OPEN )
 	{
 		u.u_error = User::MYENOENT;
 		goto out;
 	}
 
-	/* Íâ²ãÑ­»·Ã¿´Î´¦ÀípathnameÖĞÒ»¶ÎÂ·¾¶·ÖÁ¿ */
+	/* å¤–å±‚å¾ªç¯æ¯æ¬¡å¤„ç†pathnameä¸­ä¸€æ®µè·¯å¾„åˆ†é‡ */
 	while (true)
 	{
-		/* Èç¹û³ö´íÔòÊÍ·Åµ±Ç°ËÑË÷µ½µÄÄ¿Â¼ÎÄ¼şInode£¬²¢ÍË³ö */
+		/* å¦‚æœå‡ºé”™åˆ™é‡Šæ”¾å½“å‰æœç´¢åˆ°çš„ç›®å½•æ–‡ä»¶Inodeï¼Œå¹¶é€€å‡º */
 		if ( u.u_error != User::MYNOERROR )
 		{
 			break;	/* goto out; */
 		}
 
-		/* Õû¸öÂ·¾¶ËÑË÷Íê±Ï£¬·µ»ØÏàÓ¦InodeÖ¸Õë¡£Ä¿Â¼ËÑË÷³É¹¦·µ»Ø¡£ */
+		/* æ•´ä¸ªè·¯å¾„æœç´¢å®Œæ¯•ï¼Œè¿”å›ç›¸åº”InodeæŒ‡é’ˆã€‚ç›®å½•æœç´¢æˆåŠŸè¿”å›ã€‚ */
 		if ( '\0' == curchar )
 		{
 			return pInode;
 		}
 
-		/* Èç¹ûÒª½øĞĞËÑË÷µÄ²»ÊÇÄ¿Â¼ÎÄ¼ş£¬ÊÍ·ÅÏà¹ØInode×ÊÔ´ÔòÍË³ö */
+		/* å¦‚æœè¦è¿›è¡Œæœç´¢çš„ä¸æ˜¯ç›®å½•æ–‡ä»¶ï¼Œé‡Šæ”¾ç›¸å…³Inodeèµ„æºåˆ™é€€å‡º */
 		if ( (pInode->i_mode & Inode::IFMT) != Inode::IFDIR )
 		{
 			u.u_error = User::MYENOTDIR;
 			break;	/* goto out; */
 		}
 
-		/* ½øĞĞÄ¿Â¼ËÑË÷È¨ÏŞ¼ì²é,IEXECÔÚÄ¿Â¼ÎÄ¼şÖĞ±íÊ¾ËÑË÷È¨ÏŞ */
+		/* è¿›è¡Œç›®å½•æœç´¢æƒé™æ£€æŸ¥,IEXECåœ¨ç›®å½•æ–‡ä»¶ä¸­è¡¨ç¤ºæœç´¢æƒé™ */
 		if ( this->Access(pInode, Inode::IEXEC) )
 		{
 			u.u_error = User::MYEACCES;
-			break;	/* ²»¾ß±¸Ä¿Â¼ËÑË÷È¨ÏŞ£¬goto out; */
+			break;	/* ä¸å…·å¤‡ç›®å½•æœç´¢æƒé™ï¼Œgoto out; */
 		}
 
 		/* 
-		 * ½«PathnameÖĞµ±Ç°×¼±¸½øĞĞÆ¥ÅäµÄÂ·¾¶·ÖÁ¿¿½±´µ½u.u_dbuf[]ÖĞ£¬
-		 * ±ãÓÚºÍÄ¿Â¼Ïî½øĞĞ±È½Ï¡£
+		 * å°†Pathnameä¸­å½“å‰å‡†å¤‡è¿›è¡ŒåŒ¹é…çš„è·¯å¾„åˆ†é‡æ‹·è´åˆ°u.u_dbuf[]ä¸­ï¼Œ
+		 * ä¾¿äºå’Œç›®å½•é¡¹è¿›è¡Œæ¯”è¾ƒã€‚
 		 */
 		pChar = &(u.u_dbuf[0]);
 		while ( '/' != curchar && '\0' != curchar && u.u_error == User::MYNOERROR )
@@ -442,14 +444,14 @@ Inode* FileManager::NameI( char (*func)(), enum DirectorySearchMode mode )
 			}
 			curchar = (*func)();
 		}
-		/* ½«u_dbufÊ£ÓàµÄ²¿·ÖÌî³äÎª'\0' */
+		/* å°†u_dbufå‰©ä½™çš„éƒ¨åˆ†å¡«å……ä¸º'\0' */
 		while ( pChar < &(u.u_dbuf[DirectoryEntry::DIRSIZ]) )
 		{
 			*pChar = '\0';
 			pChar++;
 		}
 
-		/* ÔÊĞí³öÏÖ////a//b ÕâÖÖÂ·¾¶ ÕâÖÖÂ·¾¶µÈ¼ÛÓÚ/a/b */
+		/* å…è®¸å‡ºç°////a//b è¿™ç§è·¯å¾„ è¿™ç§è·¯å¾„ç­‰ä»·äº/a/b */
 		while ( '/' == curchar )
 		{
 			curchar = (*func)();
@@ -460,80 +462,80 @@ Inode* FileManager::NameI( char (*func)(), enum DirectorySearchMode mode )
 			break; /* goto out; */
 		}
 
-		/* ÄÚ²ãÑ­»·²¿·Ö¶ÔÓÚu.u_dbuf[]ÖĞµÄÂ·¾¶Ãû·ÖÁ¿£¬Öğ¸öËÑÑ°Æ¥ÅäµÄÄ¿Â¼Ïî */
+		/* å†…å±‚å¾ªç¯éƒ¨åˆ†å¯¹äºu.u_dbuf[]ä¸­çš„è·¯å¾„ååˆ†é‡ï¼Œé€ä¸ªæœå¯»åŒ¹é…çš„ç›®å½•é¡¹ */
 		u.u_IOParam.m_Offset = 0;
-		/* ÉèÖÃÎªÄ¿Â¼Ïî¸öÊı £¬º¬¿Õ°×µÄÄ¿Â¼Ïî*/
+		/* è®¾ç½®ä¸ºç›®å½•é¡¹ä¸ªæ•° ï¼Œå«ç©ºç™½çš„ç›®å½•é¡¹*/
 		u.u_IOParam.m_Count = pInode->i_size / (DirectoryEntry::DIRSIZ + 4);
 		freeEntryOffset = 0;
 		pBuf = NULL;
 
 		while (true)
 		{
-			/* ¶ÔÄ¿Â¼ÏîÒÑ¾­ËÑË÷Íê±Ï */
+			/* å¯¹ç›®å½•é¡¹å·²ç»æœç´¢å®Œæ¯• */
 			if ( 0 == u.u_IOParam.m_Count )
 			{
 				if ( NULL != pBuf )
 				{
 					bufMgr.Brelse(pBuf);
 				}
-				/* Èç¹ûÊÇ´´½¨ĞÂÎÄ¼ş */
+				/* å¦‚æœæ˜¯åˆ›å»ºæ–°æ–‡ä»¶ */
 				if ( FileManager::CREATE == mode && curchar == '\0' )
 				{
-					/* ÅĞ¶Ï¸ÃÄ¿Â¼ÊÇ·ñ¿ÉĞ´ */
+					/* åˆ¤æ–­è¯¥ç›®å½•æ˜¯å¦å¯å†™ */
 					if ( this->Access(pInode, Inode::IWRITE) )
 					{
 						u.u_error = User::MYEACCES;
 						goto out;	/* Failed */
 					}
 
-					/* ½«¸¸Ä¿Â¼InodeÖ¸Õë±£´æÆğÀ´£¬ÒÔºóĞ´Ä¿Â¼ÏîWriteDir()º¯Êı»áÓÃµ½ */
+					/* å°†çˆ¶ç›®å½•InodeæŒ‡é’ˆä¿å­˜èµ·æ¥ï¼Œä»¥åå†™ç›®å½•é¡¹WriteDir()å‡½æ•°ä¼šç”¨åˆ° */
 					u.u_pdir = pInode;
 
-					if ( freeEntryOffset )	/* ´Ë±äÁ¿´æ·ÅÁË¿ÕÏĞÄ¿Â¼ÏîÎ»ÓÚÄ¿Â¼ÎÄ¼şÖĞµÄÆ«ÒÆÁ¿ */
+					if ( freeEntryOffset )	/* æ­¤å˜é‡å­˜æ”¾äº†ç©ºé—²ç›®å½•é¡¹ä½äºç›®å½•æ–‡ä»¶ä¸­çš„åç§»é‡ */
 					{
-						/* ½«¿ÕÏĞÄ¿Â¼ÏîÆ«ÒÆÁ¿´æÈëuÇøÖĞ£¬Ğ´Ä¿Â¼ÏîWriteDir()»áÓÃµ½ */
+						/* å°†ç©ºé—²ç›®å½•é¡¹åç§»é‡å­˜å…¥uåŒºä¸­ï¼Œå†™ç›®å½•é¡¹WriteDir()ä¼šç”¨åˆ° */
 						u.u_IOParam.m_Offset = freeEntryOffset - (DirectoryEntry::DIRSIZ + 4);
 					}
-					else  /*ÎÊÌâ£ºÎªºÎif·ÖÖ§Ã»ÓĞÖÃIUPD±êÖ¾£¿  ÕâÊÇÒòÎªÎÄ¼şµÄ³¤¶ÈÃ»ÓĞ±äÑ½*/
+					else  /*é—®é¢˜ï¼šä¸ºä½•ifåˆ†æ”¯æ²¡æœ‰ç½®IUPDæ ‡å¿—ï¼Ÿ  è¿™æ˜¯å› ä¸ºæ–‡ä»¶çš„é•¿åº¦æ²¡æœ‰å˜å‘€*/
 					{
 						pInode->i_flag |= Inode::IUPD;
 					}
-					/* ÕÒµ½¿ÉÒÔĞ´ÈëµÄ¿ÕÏĞÄ¿Â¼ÏîÎ»ÖÃ£¬NameI()º¯Êı·µ»Ø */
+					/* æ‰¾åˆ°å¯ä»¥å†™å…¥çš„ç©ºé—²ç›®å½•é¡¹ä½ç½®ï¼ŒNameI()å‡½æ•°è¿”å› */
 					return NULL;
 				}
 				
-				/* Ä¿Â¼ÏîËÑË÷Íê±Ï¶øÃ»ÓĞÕÒµ½Æ¥ÅäÏî£¬ÊÍ·ÅÏà¹ØInode×ÊÔ´£¬²¢ÍÆ³ö */
+				/* ç›®å½•é¡¹æœç´¢å®Œæ¯•è€Œæ²¡æœ‰æ‰¾åˆ°åŒ¹é…é¡¹ï¼Œé‡Šæ”¾ç›¸å…³Inodeèµ„æºï¼Œå¹¶æ¨å‡º */
 				u.u_error = User::MYENOENT;
 				goto out;
 			}
 
-			/* ÒÑ¶ÁÍêÄ¿Â¼ÎÄ¼şµÄµ±Ç°ÅÌ¿é£¬ĞèÒª¶ÁÈëÏÂÒ»Ä¿Â¼ÏîÊı¾İÅÌ¿é */
+			/* å·²è¯»å®Œç›®å½•æ–‡ä»¶çš„å½“å‰ç›˜å—ï¼Œéœ€è¦è¯»å…¥ä¸‹ä¸€ç›®å½•é¡¹æ•°æ®ç›˜å— */
 			if ( 0 == u.u_IOParam.m_Offset % Inode::BLOCK_SIZE )
 			{
 				if ( NULL != pBuf )
 				{
 					bufMgr.Brelse(pBuf);
 				}
-				/* ¼ÆËãÒª¶ÁµÄÎïÀíÅÌ¿éºÅ */
+				/* è®¡ç®—è¦è¯»çš„ç‰©ç†ç›˜å—å· */
 				int phyBlkno = pInode->Bmap(u.u_IOParam.m_Offset / Inode::BLOCK_SIZE );
 				pBuf = bufMgr.Bread(pInode->i_dev, phyBlkno );
 			}
 
-			/* Ã»ÓĞ¶ÁÍêµ±Ç°Ä¿Â¼ÏîÅÌ¿é£¬Ôò¶ÁÈ¡ÏÂÒ»Ä¿Â¼ÏîÖÁu.u_dent */
+			/* æ²¡æœ‰è¯»å®Œå½“å‰ç›®å½•é¡¹ç›˜å—ï¼Œåˆ™è¯»å–ä¸‹ä¸€ç›®å½•é¡¹è‡³u.u_dent */
 			int* src = (int *)(pBuf->b_addr + (u.u_IOParam.m_Offset % Inode::BLOCK_SIZE));
 			Utility::DWordCopy( src, (int *)&u.u_dent, sizeof(DirectoryEntry)/sizeof(int) );
 
 			u.u_IOParam.m_Offset += (DirectoryEntry::DIRSIZ + 4);
 			u.u_IOParam.m_Count--;
 
-			/* Èç¹ûÊÇ¿ÕÏĞÄ¿Â¼Ïî£¬¼ÇÂ¼¸ÃÏîÎ»ÓÚÄ¿Â¼ÎÄ¼şÖĞÆ«ÒÆÁ¿ */
+			/* å¦‚æœæ˜¯ç©ºé—²ç›®å½•é¡¹ï¼Œè®°å½•è¯¥é¡¹ä½äºç›®å½•æ–‡ä»¶ä¸­åç§»é‡ */
 			if ( 0 == u.u_dent.m_ino )
 			{
 				if ( 0 == freeEntryOffset )
 				{
 					freeEntryOffset = u.u_IOParam.m_Offset;
 				}
-				/* Ìø¹ı¿ÕÏĞÄ¿Â¼Ïî£¬¼ÌĞø±È½ÏÏÂÒ»Ä¿Â¼Ïî */
+				/* è·³è¿‡ç©ºé—²ç›®å½•é¡¹ï¼Œç»§ç»­æ¯”è¾ƒä¸‹ä¸€ç›®å½•é¡¹ */
 				continue;
 			}
 
@@ -542,36 +544,36 @@ Inode* FileManager::NameI( char (*func)(), enum DirectorySearchMode mode )
 			{
 				if ( u.u_dbuf[i] != u.u_dent.m_name[i] )
 				{
-					break;	/* Æ¥ÅäÖÁÄ³Ò»×Ö·û²»·û£¬Ìø³öforÑ­»· */
+					break;	/* åŒ¹é…è‡³æŸä¸€å­—ç¬¦ä¸ç¬¦ï¼Œè·³å‡ºforå¾ªç¯ */
 				}
 			}
 
 			if( i < DirectoryEntry::DIRSIZ )
 			{
-				/* ²»ÊÇÒªËÑË÷µÄÄ¿Â¼Ïî£¬¼ÌĞøÆ¥ÅäÏÂÒ»Ä¿Â¼Ïî */
+				/* ä¸æ˜¯è¦æœç´¢çš„ç›®å½•é¡¹ï¼Œç»§ç»­åŒ¹é…ä¸‹ä¸€ç›®å½•é¡¹ */
 				continue;
 			}
 			else
 			{
-				/* Ä¿Â¼ÏîÆ¥Åä³É¹¦£¬»Øµ½Íâ²ãWhile(true)Ñ­»· */
+				/* ç›®å½•é¡¹åŒ¹é…æˆåŠŸï¼Œå›åˆ°å¤–å±‚While(true)å¾ªç¯ */
 				break;
 			}
 		}
 
 		/* 
-		 * ´ÓÄÚ²ãÄ¿Â¼ÏîÆ¥ÅäÑ­»·ÌøÖÁ´Ë´¦£¬ËµÃ÷pathnameÖĞ
-		 * µ±Ç°Â·¾¶·ÖÁ¿Æ¥Åä³É¹¦ÁË£¬»¹ĞèÆ¥ÅäpathnameÖĞÏÂÒ»Â·¾¶
-		 * ·ÖÁ¿£¬Ö±ÖÁÓöµ½'\0'½áÊø¡£
+		 * ä»å†…å±‚ç›®å½•é¡¹åŒ¹é…å¾ªç¯è·³è‡³æ­¤å¤„ï¼Œè¯´æ˜pathnameä¸­
+		 * å½“å‰è·¯å¾„åˆ†é‡åŒ¹é…æˆåŠŸäº†ï¼Œè¿˜éœ€åŒ¹é…pathnameä¸­ä¸‹ä¸€è·¯å¾„
+		 * åˆ†é‡ï¼Œç›´è‡³é‡åˆ°'\0'ç»“æŸã€‚
 		 */
 		if ( NULL != pBuf )
 		{
 			bufMgr.Brelse(pBuf);
 		}
 
-		/* Èç¹ûÊÇÉ¾³ı²Ù×÷£¬Ôò·µ»Ø¸¸Ä¿Â¼Inode£¬¶øÒªÉ¾³ıÎÄ¼şµÄInodeºÅÔÚu.u_dent.m_inoÖĞ */
+		/* å¦‚æœæ˜¯åˆ é™¤æ“ä½œï¼Œåˆ™è¿”å›çˆ¶ç›®å½•Inodeï¼Œè€Œè¦åˆ é™¤æ–‡ä»¶çš„Inodeå·åœ¨u.u_dent.m_inoä¸­ */
 		if ( FileManager::DELETE == mode && '\0' == curchar )
 		{
-			/* Èç¹û¶Ô¸¸Ä¿Â¼Ã»ÓĞĞ´µÄÈ¨ÏŞ */
+			/* å¦‚æœå¯¹çˆ¶ç›®å½•æ²¡æœ‰å†™çš„æƒé™ */
 			if ( this->Access(pInode, Inode::IWRITE) )
 			{
 				u.u_error = User::MYEACCES;
@@ -581,15 +583,15 @@ Inode* FileManager::NameI( char (*func)(), enum DirectorySearchMode mode )
 		}
 
 		/* 
-		 * Æ¥ÅäÄ¿Â¼Ïî³É¹¦£¬ÔòÊÍ·Åµ±Ç°Ä¿Â¼Inode£¬¸ù¾İÆ¥Åä³É¹¦µÄ
-		 * Ä¿Â¼Ïîm_ino×Ö¶Î»ñÈ¡ÏàÓ¦ÏÂÒ»¼¶Ä¿Â¼»òÎÄ¼şµÄInode¡£
+		 * åŒ¹é…ç›®å½•é¡¹æˆåŠŸï¼Œåˆ™é‡Šæ”¾å½“å‰ç›®å½•Inodeï¼Œæ ¹æ®åŒ¹é…æˆåŠŸçš„
+		 * ç›®å½•é¡¹m_inoå­—æ®µè·å–ç›¸åº”ä¸‹ä¸€çº§ç›®å½•æˆ–æ–‡ä»¶çš„Inodeã€‚
 		 */
 		short dev = pInode->i_dev;
 		this->m_InodeTable->IPut(pInode);
 		pInode = this->m_InodeTable->IGet(dev, u.u_dent.m_ino);
-		/* »Øµ½Íâ²ãWhile(true)Ñ­»·£¬¼ÌĞøÆ¥ÅäPathnameÖĞÏÂÒ»Â·¾¶·ÖÁ¿ */
+		/* å›åˆ°å¤–å±‚While(true)å¾ªç¯ï¼Œç»§ç»­åŒ¹é…Pathnameä¸­ä¸‹ä¸€è·¯å¾„åˆ†é‡ */
 
-		if ( NULL == pInode )	/* »ñÈ¡Ê§°Ü */
+		if ( NULL == pInode )	/* è·å–å¤±è´¥ */
 		{
 			return NULL;
 		}
@@ -603,15 +605,15 @@ char FileManager::NextChar()
 {
 	User& u = Kernel::Instance().GetUser();
 	
-	/* u.u_dirpÖ¸ÏòpathnameÖĞµÄ×Ö·û */
+	/* u.u_dirpæŒ‡å‘pathnameä¸­çš„å­—ç¬¦ */
 	return *u.u_dirp++;
 }
 
-/* ÓÉcreatµ÷ÓÃ¡£
- * ÎªĞÂ´´½¨µÄÎÄ¼şĞ´ĞÂµÄi½ÚµãºÍĞÂµÄÄ¿Â¼Ïî
- * ·µ»ØµÄpInodeÊÇÉÏÁËËøµÄÄÚ´æi½Úµã£¬ÆäÖĞµÄi_countÊÇ 1¡£
+/* ç”±creatè°ƒç”¨ã€‚
+ * ä¸ºæ–°åˆ›å»ºçš„æ–‡ä»¶å†™æ–°çš„ièŠ‚ç‚¹å’Œæ–°çš„ç›®å½•é¡¹
+ * è¿”å›çš„pInodeæ˜¯ä¸Šäº†é”çš„å†…å­˜ièŠ‚ç‚¹ï¼Œå…¶ä¸­çš„i_countæ˜¯ 1ã€‚
  *
- * ÔÚ³ÌĞòµÄ×îºó»áµ÷ÓÃ WriteDir£¬ÔÚÕâÀï°ÑÊôÓÚ×Ô¼ºµÄÄ¿Â¼ÏîĞ´½ø¸¸Ä¿Â¼£¬ĞŞ¸Ä¸¸Ä¿Â¼ÎÄ¼şµÄi½Úµã ¡¢½«ÆäĞ´»Ø´ÅÅÌ¡£
+ * åœ¨ç¨‹åºçš„æœ€åä¼šè°ƒç”¨ WriteDirï¼Œåœ¨è¿™é‡ŒæŠŠå±äºè‡ªå·±çš„ç›®å½•é¡¹å†™è¿›çˆ¶ç›®å½•ï¼Œä¿®æ”¹çˆ¶ç›®å½•æ–‡ä»¶çš„ièŠ‚ç‚¹ ã€å°†å…¶å†™å›ç£ç›˜ã€‚
  *
  */
 Inode* FileManager::MakNode( unsigned int mode )
@@ -619,7 +621,7 @@ Inode* FileManager::MakNode( unsigned int mode )
 	Inode* pInode;
 	User& u = Kernel::Instance().GetUser();
 
-	/* ·ÖÅäÒ»¸ö¿ÕÏĞDiskInode£¬ÀïÃæÄÚÈİÒÑÈ«²¿Çå¿Õ */
+	/* åˆ†é…ä¸€ä¸ªç©ºé—²DiskInodeï¼Œé‡Œé¢å†…å®¹å·²å…¨éƒ¨æ¸…ç©º */
 	pInode = this->m_FileSystem->IAlloc(u.u_pdir->i_dev);
 	if( NULL ==	pInode )
 	{
@@ -631,7 +633,7 @@ Inode* FileManager::MakNode( unsigned int mode )
 	pInode->i_nlink = 1;
 	pInode->i_uid = u.u_uid;
 	pInode->i_gid = u.u_gid;
-	/* ½«Ä¿Â¼ÏîĞ´Èëu.u_dent£¬ËæºóĞ´ÈëÄ¿Â¼ÎÄ¼ş */
+	/* å°†ç›®å½•é¡¹å†™å…¥u.u_dentï¼Œéšåå†™å…¥ç›®å½•æ–‡ä»¶ */
 	this->WriteDir(pInode);
 	return pInode;
 }
@@ -640,10 +642,10 @@ void FileManager::WriteDir( Inode* pInode )
 {
 	User& u = Kernel::Instance().GetUser();
 
-	/* ÉèÖÃÄ¿Â¼ÏîÖĞInode±àºÅ²¿·Ö */
+	/* è®¾ç½®ç›®å½•é¡¹ä¸­Inodeç¼–å·éƒ¨åˆ† */
 	u.u_dent.m_ino = pInode->i_number;
 
-	/* ÉèÖÃÄ¿Â¼ÏîÖĞpathname·ÖÁ¿²¿·Ö */
+	/* è®¾ç½®ç›®å½•é¡¹ä¸­pathnameåˆ†é‡éƒ¨åˆ† */
 	for ( int i = 0; i < DirectoryEntry::DIRSIZ; i++ )
 	{
 		u.u_dent.m_name[i] = u.u_dbuf[i];
@@ -653,7 +655,7 @@ void FileManager::WriteDir( Inode* pInode )
 	u.u_IOParam.m_Base = (unsigned char *)&u.u_dent;
 	u.u_segflg = 1;
 
-	/* ½«Ä¿Â¼ÏîĞ´Èë¸¸Ä¿Â¼ÎÄ¼ş */
+	/* å°†ç›®å½•é¡¹å†™å…¥çˆ¶ç›®å½•æ–‡ä»¶ */
 	u.u_pdir->WriteI();
 	this->m_InodeTable->IPut(u.u_pdir);
 }
@@ -662,7 +664,7 @@ void FileManager::SetCurDir(char* pathname)
 {
 	User& u = Kernel::Instance().GetUser();
 	
-	/* Â·¾¶²»ÊÇ´Ó¸ùÄ¿Â¼'/'¿ªÊ¼£¬ÔòÔÚÏÖÓĞu.u_curdirºóÃæ¼ÓÉÏµ±Ç°Â·¾¶·ÖÁ¿ */
+	/* è·¯å¾„ä¸æ˜¯ä»æ ¹ç›®å½•'/'å¼€å§‹ï¼Œåˆ™åœ¨ç°æœ‰u.u_curdiråé¢åŠ ä¸Šå½“å‰è·¯å¾„åˆ†é‡ */
 	if ( pathname[0] != '/' )
 	{
 		int length = Utility::StringLength(u.u_curdir);
@@ -673,20 +675,20 @@ void FileManager::SetCurDir(char* pathname)
 		}
 		Utility::StringCopy(pathname, u.u_curdir + length);
 	}
-	else	/* Èç¹ûÊÇ´Ó¸ùÄ¿Â¼'/'¿ªÊ¼£¬ÔòÈ¡´úÔ­ÓĞ¹¤×÷Ä¿Â¼ */
+	else	/* å¦‚æœæ˜¯ä»æ ¹ç›®å½•'/'å¼€å§‹ï¼Œåˆ™å–ä»£åŸæœ‰å·¥ä½œç›®å½• */
 	{
 		Utility::StringCopy(pathname, u.u_curdir);
 	}
 }
 
 /*
- * ·µ»ØÖµÊÇ0£¬±íÊ¾ÓµÓĞ´ò¿ªÎÄ¼şµÄÈ¨ÏŞ£»1±íÊ¾Ã»ÓĞËùĞèµÄ·ÃÎÊÈ¨ÏŞ¡£ÎÄ¼şÎ´ÄÜ´ò¿ªµÄÔ­Òò¼ÇÂ¼ÔÚu.u_error±äÁ¿ÖĞ¡£
+ * è¿”å›å€¼æ˜¯0ï¼Œè¡¨ç¤ºæ‹¥æœ‰æ‰“å¼€æ–‡ä»¶çš„æƒé™ï¼›1è¡¨ç¤ºæ²¡æœ‰æ‰€éœ€çš„è®¿é—®æƒé™ã€‚æ–‡ä»¶æœªèƒ½æ‰“å¼€çš„åŸå› è®°å½•åœ¨u.u_errorå˜é‡ä¸­ã€‚
  */
 int FileManager::Access( Inode* pInode, unsigned int mode )
 {
 	User& u = Kernel::Instance().GetUser();
 
-	/* ¶ÔÓÚĞ´µÄÈ¨ÏŞ£¬±ØĞë¼ì²é¸ÃÎÄ¼şÏµÍ³ÊÇ·ñÊÇÖ»¶ÁµÄ */
+	/* å¯¹äºå†™çš„æƒé™ï¼Œå¿…é¡»æ£€æŸ¥è¯¥æ–‡ä»¶ç³»ç»Ÿæ˜¯å¦æ˜¯åªè¯»çš„ */
 	if ( Inode::IWRITE == mode )
 	{
 		if( this->m_FileSystem->GetFS(pInode->i_dev)->s_ronly != 0 )
@@ -697,8 +699,8 @@ int FileManager::Access( Inode* pInode, unsigned int mode )
 		}
 	}
 	/* 
-	 * ¶ÔÓÚ³¬¼¶ÓÃ»§£¬¶ÁĞ´ÈÎºÎÎÄ¼ş¶¼ÊÇÔÊĞíµÄ
-	 * ¶øÒªÖ´ĞĞÄ³ÎÄ¼şÊ±£¬±ØĞëÔÚi_modeÓĞ¿ÉÖ´ĞĞ±êÖ¾
+	 * å¯¹äºè¶…çº§ç”¨æˆ·ï¼Œè¯»å†™ä»»ä½•æ–‡ä»¶éƒ½æ˜¯å…è®¸çš„
+	 * è€Œè¦æ‰§è¡ŒæŸæ–‡ä»¶æ—¶ï¼Œå¿…é¡»åœ¨i_modeæœ‰å¯æ‰§è¡Œæ ‡å¿—
 	 */
 	if ( u.u_uid == 0 )
 	{
@@ -755,9 +757,9 @@ void FileManager::ChMod()
 	{
 		return;
 	}
-	/* clear i_mode×Ö¶ÎÖĞµÄISGID, ISUID, ISTVXÒÔ¼°rwxrwxrwxÕâ12±ÈÌØ */
+	/* clear i_modeå­—æ®µä¸­çš„ISGID, ISUID, ISTVXä»¥åŠrwxrwxrwxè¿™12æ¯”ç‰¹ */
 	pInode->i_mode &= (~0xFFF);
-	/* ¸ù¾İÏµÍ³µ÷ÓÃµÄ²ÎÊıÖØĞÂÉèÖÃi_mode×Ö¶Î */
+	/* æ ¹æ®ç³»ç»Ÿè°ƒç”¨çš„å‚æ•°é‡æ–°è®¾ç½®i_modeå­—æ®µ */
 	pInode->i_mode |= (mode & 0xFFF);
 	pInode->i_flag |= Inode::IUPD;
 
@@ -772,7 +774,7 @@ void FileManager::ChOwn()
 	short uid = u.u_arg[1];
 	short gid = u.u_arg[2];
 
-	/* ²»ÊÇ³¬¼¶ÓÃ»§»òÕß²»ÊÇÎÄ¼şÖ÷Ôò·µ»Ø */
+	/* ä¸æ˜¯è¶…çº§ç”¨æˆ·æˆ–è€…ä¸æ˜¯æ–‡ä»¶ä¸»åˆ™è¿”å› */
 	if ( !u.SUser() || (pInode = this->Owner()) == NULL )
 	{
 		return;
@@ -794,7 +796,7 @@ void FileManager::ChDir()
 	{
 		return;
 	}
-	/* ËÑË÷µ½µÄÎÄ¼ş²»ÊÇÄ¿Â¼ÎÄ¼ş */
+	/* æœç´¢åˆ°çš„æ–‡ä»¶ä¸æ˜¯ç›®å½•æ–‡ä»¶ */
 	if ( (pInode->i_mode & Inode::IFMT) != Inode::IFDIR )
 	{
 		u.u_error = User::MYENOTDIR;
@@ -820,33 +822,33 @@ void FileManager::Link()
 	User& u = Kernel::Instance().GetUser();
 
 	pInode = this->NameI(FileManager::NextChar, FileManager::OPEN);
-	/* ´ò¿¨ÎÄ¼şÊ§°Ü */
+	/* æ‰“å¡æ–‡ä»¶å¤±è´¥ */
 	if ( NULL == pInode )
 	{
 		return;
 	}
-	/* Á´½ÓµÄÊıÁ¿ÒÑ¾­×î´ó */
+	/* é“¾æ¥çš„æ•°é‡å·²ç»æœ€å¤§ */
 	if ( pInode->i_nlink >= 255 )
 	{
 		u.u_error = User::MYEMLINK;
-		/* ³ö´í£¬ÊÍ·Å×ÊÔ´²¢ÍË³ö */
+		/* å‡ºé”™ï¼Œé‡Šæ”¾èµ„æºå¹¶é€€å‡º */
 		this->m_InodeTable->IPut(pInode);
 		return;
 	}
-	/* ¶ÔÄ¿Â¼ÎÄ¼şµÄÁ´½ÓÖ»ÄÜÓÉ³¬¼¶ÓÃ»§½øĞĞ */
+	/* å¯¹ç›®å½•æ–‡ä»¶çš„é“¾æ¥åªèƒ½ç”±è¶…çº§ç”¨æˆ·è¿›è¡Œ */
 	if ( (pInode->i_mode & Inode::IFMT) == Inode::IFDIR && !u.SUser() )
 	{
-		/* ³ö´í£¬ÊÍ·Å×ÊÔ´²¢ÍË³ö */
+		/* å‡ºé”™ï¼Œé‡Šæ”¾èµ„æºå¹¶é€€å‡º */
 		this->m_InodeTable->IPut(pInode);
 		return;
 	}
 
-	/* ½âËøÏÖ´æÎÄ¼şInode,ÒÔ±ÜÃâÔÚÒÔÏÂËÑË÷ĞÂÎÄ¼şÊ±²úÉúËÀËø */
+	/* è§£é”ç°å­˜æ–‡ä»¶Inode,ä»¥é¿å…åœ¨ä»¥ä¸‹æœç´¢æ–°æ–‡ä»¶æ—¶äº§ç”Ÿæ­»é” */
 	pInode->i_flag &= (~Inode::ILOCK);
-	/* Ö¸ÏòÒª´´½¨µÄĞÂÂ·¾¶newPathname */
+	/* æŒ‡å‘è¦åˆ›å»ºçš„æ–°è·¯å¾„newPathname */
 	u.u_dirp = (char *)u.u_arg[1];
 	pNewInode = this->NameI(FileManager::NextChar, FileManager::CREATE);
-	/* Èç¹ûÎÄ¼şÒÑ´æÔÚ */
+	/* å¦‚æœæ–‡ä»¶å·²å­˜åœ¨ */
 	if ( NULL != pNewInode )
 	{
 		u.u_error = User::MYEEXIST;
@@ -854,16 +856,16 @@ void FileManager::Link()
 	}
 	if ( User::MYNOERROR != u.u_error )
 	{
-		/* ³ö´í£¬ÊÍ·Å×ÊÔ´²¢ÍË³ö */
+		/* å‡ºé”™ï¼Œé‡Šæ”¾èµ„æºå¹¶é€€å‡º */
 		this->m_InodeTable->IPut(pInode);
 		return;
 	}
-	/* ¼ì²éÄ¿Â¼Óë¸ÃÎÄ¼şÊÇ·ñÔÚÍ¬Ò»¸öÉè±¸ÉÏ */
+	/* æ£€æŸ¥ç›®å½•ä¸è¯¥æ–‡ä»¶æ˜¯å¦åœ¨åŒä¸€ä¸ªè®¾å¤‡ä¸Š */
 	if ( u.u_pdir->i_dev != pInode->i_dev )
 	{
 		this->m_InodeTable->IPut(u.u_pdir);
 		u.u_error = User::MYEXDEV;
-		/* ³ö´í£¬ÊÍ·Å×ÊÔ´²¢ÍË³ö */
+		/* å‡ºé”™ï¼Œé‡Šæ”¾èµ„æºå¹¶é€€å‡º */
 		this->m_InodeTable->IPut(pInode);
 		return;
 	}
@@ -892,14 +894,14 @@ void FileManager::UnLink()
 	{
 		Utility::Panic("unlink -- iget");
 	}
-	/* Ö»ÓĞroot¿ÉÒÔunlinkÄ¿Â¼ÎÄ¼ş */
+	/* åªæœ‰rootå¯ä»¥unlinkç›®å½•æ–‡ä»¶ */
 	if ( (pInode->i_mode & Inode::IFMT) == Inode::IFDIR && !u.SUser() )
 	{
 		this->m_InodeTable->IPut(pDeleteInode);
 		this->m_InodeTable->IPut(pInode);
 		return;
 	}
-	/* Ğ´ÈëÇåÁãºóµÄÄ¿Â¼Ïî */
+	/* å†™å…¥æ¸…é›¶åçš„ç›®å½•é¡¹ */
 	u.u_IOParam.m_Offset -= (DirectoryEntry::DIRSIZ + 4);
 	u.u_IOParam.m_Base = (unsigned char *)&u.u_dent;
 	u.u_IOParam.m_Count = DirectoryEntry::DIRSIZ + 4;
@@ -907,7 +909,7 @@ void FileManager::UnLink()
 	u.u_dent.m_ino = 0;
 	pDeleteInode->WriteI();
 
-	/* ĞŞ¸ÄinodeÏî */
+	/* ä¿®æ”¹inodeé¡¹ */
 	pInode->i_nlink--;
 	pInode->i_flag |= Inode::IUPD;
 
@@ -920,11 +922,11 @@ void FileManager::MkNod()
 	Inode* pInode;
 	User& u = Kernel::Instance().GetUser();
 
-	/* ¼ì²éuidÊÇ·ñÊÇroot£¬¸ÃÏµÍ³µ÷ÓÃÖ»ÓĞuid==rootÊ±²Å¿É±»µ÷ÓÃ */
+	/* æ£€æŸ¥uidæ˜¯å¦æ˜¯rootï¼Œè¯¥ç³»ç»Ÿè°ƒç”¨åªæœ‰uid==rootæ—¶æ‰å¯è¢«è°ƒç”¨ */
 	if ( u.SUser() )
 	{
 		pInode = this->NameI(FileManager::NextChar, FileManager::CREATE);
-		/* Òª´´½¨µÄÎÄ¼şÒÑ¾­´æÔÚ,ÕâÀï²¢²»ÄÜÈ¥¸²¸Ç´ËÎÄ¼ş */
+		/* è¦åˆ›å»ºçš„æ–‡ä»¶å·²ç»å­˜åœ¨,è¿™é‡Œå¹¶ä¸èƒ½å»è¦†ç›–æ­¤æ–‡ä»¶ */
 		if ( pInode != NULL )
 		{
 			u.u_error = User::MYEEXIST;
@@ -934,21 +936,21 @@ void FileManager::MkNod()
 	}
 	else
 	{
-		/* ·ÇrootÓÃ»§Ö´ĞĞmknod()ÏµÍ³µ÷ÓÃ·µ»ØUser::EPERM */
+		/* érootç”¨æˆ·æ‰§è¡Œmknod()ç³»ç»Ÿè°ƒç”¨è¿”å›User::EPERM */
 		u.u_error = User::MYEPERM;
 		return;
 	}
-	/* Ã»ÓĞÍ¨¹ıSUser()µÄ¼ì²é */
+	/* æ²¡æœ‰é€šè¿‡SUser()çš„æ£€æŸ¥ */
 	if ( User::MYNOERROR != u.u_error )
 	{
-		return;	/* Ã»ÓĞĞèÒªÊÍ·ÅµÄ×ÊÔ´£¬Ö±½ÓÍË³ö */
+		return;	/* æ²¡æœ‰éœ€è¦é‡Šæ”¾çš„èµ„æºï¼Œç›´æ¥é€€å‡º */
 	}
 	pInode = this->MakNode(u.u_arg[1]);
 	if ( NULL == pInode )
 	{
 		return;
 	}
-	/* Ëù½¨Á¢ÊÇÉè±¸ÎÄ¼ş */
+	/* æ‰€å»ºç«‹æ˜¯è®¾å¤‡æ–‡ä»¶ */
 	if ( (pInode->i_mode & (Inode::IFBLK | Inode::IFCHR)) != 0 )
 	{
 		pInode->i_addr[0] = u.u_arg[2];
@@ -956,7 +958,7 @@ void FileManager::MkNod()
 	this->m_InodeTable->IPut(pInode);
 }
 /*==============================class OpenFileTable===================================*/
-/* ÏµÍ³È«¾Ö´ò¿ªÎÄ¼ş±í¶ÔÏóÊµÀıµÄ¶¨Òå */
+/* ç³»ç»Ÿå…¨å±€æ‰“å¼€æ–‡ä»¶è¡¨å¯¹è±¡å®ä¾‹çš„å®šä¹‰ */
 OpenFileTable g_OpenFileTable;
 
 OpenFileTable::OpenFileTable()
@@ -968,30 +970,30 @@ OpenFileTable::~OpenFileTable()
 {
 	//nothing to do here
 }
-/*×÷ÓÃ£º½ø³Ì´ò¿ªÎÄ¼şÃèÊö·û±íÖĞÕÒµÄ¿ÕÏĞÏî  Ö® ÏÂ±ê  Ğ´Èë u_ar0[EAX]*/
+/*ä½œç”¨ï¼šè¿›ç¨‹æ‰“å¼€æ–‡ä»¶æè¿°ç¬¦è¡¨ä¸­æ‰¾çš„ç©ºé—²é¡¹  ä¹‹ ä¸‹æ ‡  å†™å…¥ u_ar0[EAX]*/
 File* OpenFileTable::FAlloc()
 {
 	int fd;
 	User& u = Kernel::Instance().GetUser();
 
-	/* ÔÚ½ø³Ì´ò¿ªÎÄ¼şÃèÊö·û±íÖĞ»ñÈ¡Ò»¸ö¿ÕÏĞÏî */
+	/* åœ¨è¿›ç¨‹æ‰“å¼€æ–‡ä»¶æè¿°ç¬¦è¡¨ä¸­è·å–ä¸€ä¸ªç©ºé—²é¡¹ */
 	fd = u.u_ofiles.AllocFreeSlot();
 
-	if(fd < 0)	/* Èç¹ûÑ°ÕÒ¿ÕÏĞÏîÊ§°Ü */
+	if(fd < 0)	/* å¦‚æœå¯»æ‰¾ç©ºé—²é¡¹å¤±è´¥ */
 	{
 		return NULL;
 	}
 
 	for(int i = 0; i < OpenFileTable::NFILE; i++)
 	{
-		/* f_count==0±íÊ¾¸ÃÏî¿ÕÏĞ */
+		/* f_count==0è¡¨ç¤ºè¯¥é¡¹ç©ºé—² */
 		if(this->m_File[i].f_count == 0)
 		{
-			/* ½¨Á¢ÃèÊö·ûºÍFile½á¹¹µÄ¹´Á¬¹ØÏµ */
+			/* å»ºç«‹æè¿°ç¬¦å’ŒFileç»“æ„çš„å‹¾è¿å…³ç³» */
 			u.u_ofiles.SetF(fd, &this->m_File[i]);
-			/* Ôö¼Ó¶Ôfile½á¹¹µÄÒıÓÃ¼ÆÊı */
+			/* å¢åŠ å¯¹fileç»“æ„çš„å¼•ç”¨è®¡æ•° */
 			this->m_File[i].f_count++;
-			/* Çå¿ÕÎÄ¼ş¶Á¡¢Ğ´Î»ÖÃ */
+			/* æ¸…ç©ºæ–‡ä»¶è¯»ã€å†™ä½ç½® */
 			this->m_File[i].f_offset = 0;
 			return (&this->m_File[i]);
 		}
@@ -1006,7 +1008,7 @@ void OpenFileTable::CloseF(File *pFile)
 {
 	Inode* pNode;
 
-	/* ¹ÜµÀÀàĞÍ */
+	/* ç®¡é“ç±»å‹ */
 	if(pFile->f_flag & File::FPIPE)
 	{
 		pNode = pFile->f_inode;
@@ -1016,14 +1018,14 @@ void OpenFileTable::CloseF(File *pFile)
 	if(pFile->f_count <= 1)
 	{
 		/* 
-		 * Èç¹ûµ±Ç°½ø³ÌÊÇ×îºóÒ»¸öÒıÓÃ¸ÃÎÄ¼şµÄ½ø³Ì£¬
-		 * ¶ÔÌØÊâ¿éÉè±¸¡¢×Ö·ûÉè±¸ÎÄ¼şµ÷ÓÃÏàÓ¦µÄ¹Ø±Õº¯Êı
+		 * å¦‚æœå½“å‰è¿›ç¨‹æ˜¯æœ€åä¸€ä¸ªå¼•ç”¨è¯¥æ–‡ä»¶çš„è¿›ç¨‹ï¼Œ
+		 * å¯¹ç‰¹æ®Šå—è®¾å¤‡ã€å­—ç¬¦è®¾å¤‡æ–‡ä»¶è°ƒç”¨ç›¸åº”çš„å…³é—­å‡½æ•°
 		 */
 		pFile->f_inode->CloseI(pFile->f_flag & File::FWRITE);
 		g_InodeTable.IPut(pFile->f_inode);
 	}
 
-	/* ÒıÓÃµ±Ç°FileµÄ½ø³ÌÊı¼õ1 */
+	/* å¼•ç”¨å½“å‰Fileçš„è¿›ç¨‹æ•°å‡1 */
 	pFile->f_count--;
 }
 

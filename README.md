@@ -59,16 +59,18 @@ This project mainly has two executable program:
 
   This is basic command prompt window
 
-  Basic system instructions:
+  Supported system command:
 
-  * creat
-  * open
-  * read
-  * write
-  * lseek(seek)
-  * close
-  * mkdir
-  * others...
+  - [ ] creat
+  - [ ] open
+  - [ ] read
+  - [ ] write
+  - [ ] lseek(seek)
+  - [ ] close
+  - [ ] mkdir
+  - [x] cd
+  - [x] ls
+  - [ ] help
 
 # Structure
 
@@ -110,7 +112,35 @@ This project mainly has two executable program:
   InodeTable g_InodeTable;
   ```
 
-  
+# How to use
+
+Clone this repo
+
+```bash
+git clone git@github.com:kagaya85/UnixFileSystem.git
+```
+
+Make
+
+```bash
+cd ./UnixFileSystem
+make
+```
+
+Use `format` and `SecondFS`
+
+```bash
+./format
+./SecondFS
+```
+
+Use help command to show all the commands suppoted
+
+And good luck !!!
+
+**If you find any mistakes in code, issues or pull request is always WELCOME!**
+
+# Log 
 
 > 2019年4月3日
 >
@@ -138,16 +168,21 @@ This project mainly has two executable program:
 >
 > 任务：
 >
-> 重写四个大类的初始化函数匹配磁盘文件
+> * 重写四个大类的初始化函数匹配磁盘文件
 >
-> `makefile`
+> * `makefile`
 >
-> 编译纠错
+> * 编译纠错
 >
 > 2019年4月17日
 >
-> 修复了各种bug。。。
+> * 修复了各种bug。。。
 >
-> 基本功能已经实现
+> * 基本功能已经实现
 >
-> ls命令实现
+> * ls命令实现
+>
+> 2019年4月19日
+>
+> * cd命令实现
+> * 修复了切换目录是路径显示的问题

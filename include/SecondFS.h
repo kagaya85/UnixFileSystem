@@ -29,7 +29,8 @@ public:
         Lseek,
         Close,
         Mkdir,
-        Ls
+        Ls,
+        Cd
     };
 
 public:
@@ -37,7 +38,8 @@ public:
     ~SecondFS();
     
     int prompt();
-    
+    vector<string> split(const string& s, const string& c);
+
     /* command */
     void creat();
     void open();
@@ -47,6 +49,7 @@ public:
     void close();
     void mkdir();
     void ls();
+    void cd();
 };
 
 

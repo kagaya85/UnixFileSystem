@@ -285,7 +285,7 @@ Buf* FileSystem::Alloc(short dev)
 	 * 或者分配到的空闲磁盘块编号不属于数据盘块区域中(由BadBlock()检查)，
 	 * 都意味着分配空闲磁盘块操作失败。
 	 */
-	if(blkno <= 0)	// 0号数据块与0号inode不用
+	if(blkno <= 0)	// 0号inode不用
 	{
 		sb->s_ndfree = 0;
 		std::cerr << "No Space On "<< dev << " !" << std::endl;

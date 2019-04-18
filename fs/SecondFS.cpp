@@ -4,14 +4,16 @@
  * File Created: Monday, 25th March 2019 8:17:08 pm
  * Author: kagaya (kagaya85@outlook.com)
  * -----
- * Last Modified: Monday, 25th March 2019 8:22:12 pm
+ * Last Modified: Thursday, 18th April 2019 2:10:17 pm
  * Modified By: kagaya (kagaya85@outlook.com>)
  */
 
 #include "SecondFS.h"
 #include "Kernel.h"
 #include <iostream>
-#include <string.h>
+#include <cstring>
+#include <string>
+#include <vector>
 
 using namespace std;
 
@@ -32,6 +34,9 @@ int main()
                 break;
             case SecondFS::Ls:
                 fs.ls();
+                break;
+            case SecondFS::Cd:
+                fs.cd();
                 break;
             default:
                 break;
@@ -76,10 +81,16 @@ SecondFS::~SecondFS()
  */
 int SecondFS::prompt()
 {
-    string command;
-	User& u = Kernel::Instance().GetUser();
+    string command, line, ch;
+	vector<string> argv;
+    User& u = Kernel::Instance().GetUser();
+    ch = " ";
+
     cout << "[kagaya@localhost](" << u.u_curdir << ")# ";
-    getline(cin, command);
+    
+    getline(cin, line);
+    argv = split(line, ch);
+    command = argv[0];
     
     if(command == "creat")
         return SecondFS::Creat;
@@ -103,6 +114,28 @@ int SecondFS::prompt()
     return -1;    
 }
 
+vector<string> split(const string& s, const string& c)
+{ 
+    vector<string> v;
+    std::string::size_type pos1, pos2;
+    size_t len = s.length();
+    pos2 = s.find(c);
+    pos1 = 0;
+    while(std::string::npos != pos2)
+    {
+        v.emplace_back(s.substr(pos1, pos2-pos1));
+ 
+        pos1 = pos2 + c.size();
+        pos2 = s.find(c, pos1);
+    }
+    if(pos1 != len)
+        v.emplace_back(s.substr(pos1));
+    
+    return v;
+}
+
+
+/* command */
 void SecondFS::mkdir()
 {
     return;
@@ -161,9 +194,9 @@ void SecondFS::ls()
             continue;
         }
 
-        if (!strcmp(dent.m_name, ".") || !strcmp(dent.m_name, ".."))
+        if (dent.m_name[0] == '.')
         {
-            // 默认跳过 . ..
+            // 默认跳过隐藏文件 . ..
             // cout << 2 << endl;
             continue;
         }
@@ -179,3 +212,7 @@ void SecondFS::ls()
     return;
 }
 
+void SecondFS::cd()
+{
+
+}

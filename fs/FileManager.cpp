@@ -590,7 +590,9 @@ Inode* FileManager::NameI( char (*func)(), enum DirectorySearchMode mode )
 		this->m_InodeTable->IPut(pInode);
 		pInode = this->m_InodeTable->IGet(dev, u.u_dent.m_ino);
 		/* 回到外层While(true)循环，继续匹配Pathname中下一路径分量 */
-
+#ifdef DEBUG
+		pInode->IInfo();
+#endif
 		if ( NULL == pInode )	/* 获取失败 */
 		{
 			return NULL;
@@ -663,17 +665,59 @@ void FileManager::WriteDir( Inode* pInode )
 void FileManager::SetCurDir(char* pathname)
 {
 	User& u = Kernel::Instance().GetUser();
-	
+	char* pChar = NULL;
+	char curchar = pathname[0];
 	/* 路径不是从根目录'/'开始，则在现有u.u_curdir后面加上当前路径分量 */
 	if ( pathname[0] != '/' )
 	{
 		int length = Utility::StringLength(u.u_curdir);
-		if ( u.u_curdir[length - 1] != '/' )
+		while(true)
 		{
-			u.u_curdir[length] = '/';
-			length++;
+			/* 
+			* 将Pathname中当前准备进行匹配的路径分量拷贝到u.u_dbuf[]中，
+			*/
+			pChar = &(u.u_dbuf[0]);
+			while ( '/' != curchar && '\0' != curchar)
+			{
+				if ( pChar < &(u.u_dbuf[DirectoryEntry::DIRSIZ]) )
+				{
+					*pChar = curchar;
+					pChar++;
+				}
+				curchar = *(++pathname);
+			}
+			/* 将u_dbuf剩余的部分填充为'\0' */
+			while ( pChar < &(u.u_dbuf[DirectoryEntry::DIRSIZ]) )
+			{
+				*pChar = '\0';
+				pChar++;
+			}
+
+			/* 允许出现////a//b 这种路径 这种路径等价于/a/b */
+			while ( '/' == curchar )
+			{
+				curchar = *(pathname++);
+			}
+		
+			if (u.u_dbuf[0] == '.' && u.u_dbuf[1] == '\0')	// cd .
+				continue;	// 路径不变，取下一个分路径
+			else if(u.u_dbuf[0] == '.' && u.u_dbuf[1] == '.' && u.u_dbuf[2] == '\0') // cd ..
+			{
+				// 退回到上级路径
+				while(u.u_curdir[length - 1] != '/')
+					length--;
+				continue;	// 寻找下一分路径
+			}
+
+			if ( u.u_curdir[length - 1] != '/' )	// 当前路径不以 / 结尾，补充 /
+			{
+				u.u_curdir[length] = '/';
+				length++;
+			}
+			Utility::StringCopy(u.u_dbuf, u.u_curdir + length);
+			if (curchar == '\0')
+				break;	// end
 		}
-		Utility::StringCopy(pathname, u.u_curdir + length);
 	}
 	else	/* 如果是从根目录'/'开始，则取代原有工作目录 */
 	{

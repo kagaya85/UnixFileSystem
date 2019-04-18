@@ -683,6 +683,9 @@ void Inode::ICopy(Buf *bp, int inumber)
 	{
 		this->i_addr[i] = dInode.d_addr[i];
 	}
+#ifdef DEBUG
+	cout << "Inode " << this->i_dev << ':' << this->i_number << " loaded" << endl;
+#endif
 }
 
 void Inode::IInfo()

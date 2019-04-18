@@ -13,7 +13,9 @@
 #define SECOND
 #include "FileSystem.h"
 #include "Defines.h"
-
+#include <cstring>
+#include <string>
+#include <vector>
 /**
  * Shell的实现
  */
@@ -38,7 +40,7 @@ public:
     ~SecondFS();
     
     int prompt();
-    vector<string> split(const string& s, const string& c);
+    std::vector<std::string> split(const std::string& s, const std::string& c);
 
     /* command */
     void creat();
@@ -49,7 +51,7 @@ public:
     void close();
     void mkdir();
     void ls();
-    void cd();
+    void cd(std::string dir);
 };
 
 

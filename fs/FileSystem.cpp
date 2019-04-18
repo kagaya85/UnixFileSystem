@@ -504,7 +504,7 @@ Inode* InodeTable::IGet(short dev, int inumber)
 	Inode* pInode;
 	User& u = Kernel::Instance().GetUser();
 #ifdef DEBUG
-	cout << "Start load Inode" << dev << ":" << inumber << endl;
+	cout << "Start read Inode " << dev << ":" << inumber << endl;
 #endif
 	while(true)
 	{

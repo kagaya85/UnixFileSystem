@@ -11,9 +11,7 @@
 #include "SecondFS.h"
 #include "Kernel.h"
 #include <iostream>
-#include <cstring>
-#include <string>
-#include <vector>
+
 
 using namespace std;
 
@@ -27,20 +25,6 @@ int main()
     while(true)
     {
         inum = fs.prompt();
-        switch (inum)
-        {
-            case SecondFS::Mkdir:
-                fs.mkdir();
-                break;
-            case SecondFS::Ls:
-                fs.ls();
-                break;
-            case SecondFS::Cd:
-                fs.cd();
-                break;
-            default:
-                break;
-        }
     } 
 }
 
@@ -86,9 +70,14 @@ int SecondFS::prompt()
     User& u = Kernel::Instance().GetUser();
     ch = " ";
 
-    cout << "[kagaya@localhost](" << u.u_curdir << ")# ";
-    
-    getline(cin, line);
+    while(true)
+    {
+        cout << "[kagaya@localhost](" << u.u_curdir << ")# ";
+        getline(cin, line);
+        if(line.length() != 0)
+            break;
+    }
+        
     argv = split(line, ch);
     command = argv[0];
     
@@ -106,15 +95,19 @@ int SecondFS::prompt()
         return SecondFS::Close;
     else if(command == "mkdir")
         return SecondFS::Mkdir;
-    else if(command == "ls")
+    else if (command == "ls") {
+        this->ls();
         return SecondFS::Ls;
-    else
+    } else if (command == "cd") {
+        this->cd(argv[1]);
+        return SecondFS::Cd;
+    } else
         cout << "Command " << command << " not found" << endl;
 
     return -1;    
 }
 
-vector<string> split(const string& s, const string& c)
+vector<string> SecondFS::split(const string& s, const string& c)
 { 
     vector<string> v;
     std::string::size_type pos1, pos2;
@@ -181,10 +174,6 @@ void SecondFS::ls()
         Utility::DWordCopy(src, (int*)&dent, sizeof(DirectoryEntry) / sizeof(int));
         u.u_IOParam.m_Offset += (DirectoryEntry::DIRSIZ + 4);
         u.u_IOParam.m_Count--; 
-// #ifdef DEBUG
-//     cout << "dent.m_ino: " << dent.m_ino << endl;
-//     cout << "dent.m_name: " << dent.m_name << endl; 
-// #endif
 
         /* 如果是空闲目录项，记录该项位于目录文件中偏移量 */
         if ( 0 == dent.m_ino )
@@ -212,7 +201,25 @@ void SecondFS::ls()
     return;
 }
 
-void SecondFS::cd()
+void SecondFS::cd(string dir)
 {
+    User& u = Kernel::Instance().GetUser();
+    FileManager& fm = Kernel::Instance().GetFileManager();
 
+    char* pstr= new(nothrow) char[dir.length() + 1];
+    strcpy(pstr, dir.c_str());
+    u.u_dirp = pstr;    
+    u.u_arg[0] = (long long)pstr;
+    u.u_error = User::MYNOERROR;
+    fm.ChDir();
+    if(u.u_error)
+    {
+        if(u.u_error == User::MYENOTDIR)
+            cerr << "cd: not a directory:" << dir << endl;
+        else if(u.u_error == User::MYENOENT)
+            cerr << "cd: no such file or directory:" << dir << endl;
+    }
+
+    delete pstr;
+    return;
 }

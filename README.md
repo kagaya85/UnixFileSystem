@@ -72,7 +72,7 @@ This project mainly has two executable program:
   - [x] ls
   - [ ] help
 
-# Structure
+## Structure
 
 * dev 磁盘读写相关
   * `BufferManager` buffer管理
@@ -91,8 +91,6 @@ This project mainly has two executable program:
 * Kernel
 
   * Kernel.cpp定义的全局变量
-
-    
 
   * Kernel 通过kernel类中的静态变量来对一些全局对象、变量进行管理
 
@@ -134,7 +132,7 @@ Use `format` and `SecondFS`
 ./SecondFS
 ```
 
-Use help command to show all the commands suppoted
+Use `help` command to show all the commands suppoted
 
 And good luck !!!
 
@@ -182,7 +180,7 @@ And good luck !!!
 >
 > * ls命令实现
 >
-> 2019年4月19日
+> 2019年4月18日
 >
 > * cd命令实现
 > * 修复了切换目录是路径显示的问题

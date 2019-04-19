@@ -65,7 +65,7 @@ void FileManager::Creat()
 		/* 创建失败 */
 		if ( NULL == pInode )
 		{
-			std::cerr << "Creat Error" << std::endl;
+			std::cerr << "Creat Inode Error." << std::endl;
 			return;
 		}
 
@@ -413,6 +413,9 @@ Inode* FileManager::NameI( char (*func)(), enum DirectorySearchMode mode )
 		/* 整个路径搜索完毕，返回相应Inode指针。目录搜索成功返回。 */
 		if ( '\0' == curchar )
 		{
+#ifdef DEBUG
+			std::cout << "Search return ok!" << std::endl;
+#endif
 			return pInode;
 		}
 
@@ -468,12 +471,17 @@ Inode* FileManager::NameI( char (*func)(), enum DirectorySearchMode mode )
 		u.u_IOParam.m_Count = pInode->i_size / (DirectoryEntry::DIRSIZ + 4);
 		freeEntryOffset = 0;
 		pBuf = NULL;
-
+#ifdef DEBUG
+		std::cout << "Start find dir: " << u.u_dbuf << std::endl;
+#endif
 		while (true)
 		{
 			/* 对目录项已经搜索完毕 */
 			if ( 0 == u.u_IOParam.m_Count )
 			{
+#ifdef DEBUG
+				std::cout << "Dir: " << u.u_dbuf << " not find." << std::endl;
+#endif
 				if ( NULL != pBuf )
 				{
 					bufMgr.Brelse(pBuf);
@@ -538,13 +546,21 @@ Inode* FileManager::NameI( char (*func)(), enum DirectorySearchMode mode )
 				/* 跳过空闲目录项，继续比较下一目录项 */
 				continue;
 			}
-
+#ifdef DEBUG
+			std::cout << "Compare with " << u.u_dent.m_name << std::endl;
+#endif
 			int i;
 			for ( i = 0; i < DirectoryEntry::DIRSIZ; i++ )
 			{
 				if ( u.u_dbuf[i] != u.u_dent.m_name[i] )
 				{
 					break;	/* 匹配至某一字符不符，跳出for循环 */
+				}
+				else if ( u.u_dbuf[i] == '\0')
+				{
+					// 防止 \0 后出现随机字符导致匹配失败
+					i = DirectoryEntry::DIRSIZ;
+					break;
 				}
 			}
 
@@ -556,6 +572,9 @@ Inode* FileManager::NameI( char (*func)(), enum DirectorySearchMode mode )
 			else
 			{
 				/* 目录项匹配成功，回到外层While(true)循环 */
+#ifdef DEBUG
+				std::cout << "Dir: " << u.u_dbuf << " finded." << std::endl;
+#endif
 				break;
 			}
 		}
@@ -627,14 +646,19 @@ Inode* FileManager::MakNode( unsigned int mode )
 	pInode = this->m_FileSystem->IAlloc(u.u_pdir->i_dev);
 	if( NULL ==	pInode )
 	{
+		std::cerr << "No enough Inode" << std::endl;
 		return NULL;
 	}
 
 	pInode->i_flag |= (Inode::IACC | Inode::IUPD);
-	pInode->i_mode = mode | Inode::IALLOC;
+	pInode->i_mode = mode;
 	pInode->i_nlink = 1;
 	pInode->i_uid = u.u_uid;
 	pInode->i_gid = u.u_gid;
+#ifdef DEBUG
+	std::cout << "Create a new Inode." << std::endl;
+	pInode->IInfo();
+#endif
 	/* 将目录项写入u.u_dent，随后写入目录文件 */
 	this->WriteDir(pInode);
 	return pInode;
@@ -692,13 +716,12 @@ void FileManager::SetCurDir(char* pathname)
 				*pChar = '\0';
 				pChar++;
 			}
-
 			/* 允许出现////a//b 这种路径 这种路径等价于/a/b */
 			while ( '/' == curchar )
 			{
 				curchar = *(pathname++);
 			}
-		
+
 			if (u.u_dbuf[0] == '.' && u.u_dbuf[1] == '\0')	// cd .
 				continue;	// 路径不变，取下一个分路径
 			else if(u.u_dbuf[0] == '.' && u.u_dbuf[1] == '.' && u.u_dbuf[2] == '\0') // cd ..
@@ -706,14 +729,18 @@ void FileManager::SetCurDir(char* pathname)
 				// 退回到上级路径
 				while(u.u_curdir[length - 1] != '/')
 					length--;
+				if (length > 1)	// 如果遇到的不是根目录，则要去掉 '/‘
+					length--;
+				
 				continue;	// 寻找下一分路径
 			}
 
-			if ( u.u_curdir[length - 1] != '/' )	// 当前路径不以 / 结尾，补充 /
+			if ( u.u_dbuf[0] && u.u_curdir[length - 1] != '/' )	// 有路径追加 且 当前路径不以 / 结尾，补充 /
 			{
 				u.u_curdir[length] = '/';
 				length++;
 			}
+
 			Utility::StringCopy(u.u_dbuf, u.u_curdir + length);
 			if (curchar == '\0')
 				break;	// end

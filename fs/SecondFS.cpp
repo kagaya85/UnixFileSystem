@@ -19,13 +19,17 @@ extern InodeTable g_InodeTable;
 
 int main()
 {
-    int inum;   // 指令序号
+    int ret;   // 指令序号
     SecondFS fs;
 
     while(true)
     {
-        inum = fs.prompt();
+        ret = fs.prompt();
+        if (ret == SecondFS::Exit)
+            break;
     } 
+
+    return 0;
 }
 
 /**
@@ -36,6 +40,8 @@ SecondFS::SecondFS()
 	cout << "SecondFS Loading..." << endl;
 	Kernel::Instance().Initialize();	
 	Kernel::Instance().GetFileSystem().LoadSuperBlock();
+	Kernel::Instance().GetFileSystem().LoadBimap(DiskDriver::DATA_BITMAP_BLOCK);
+	Kernel::Instance().GetFileSystem().LoadBimap(DiskDriver::INODE_BITMAP_BLOCK);
     cout << "SecondFS Loaded......OK." << endl;
 	/*  初始化rootDirInode和用户当前工作目录，以便NameI()正常工作 */
 	FileManager& fileMgr = Kernel::Instance().GetFileManager();
@@ -57,7 +63,11 @@ SecondFS::SecondFS()
 
 SecondFS::~SecondFS()
 {
-    /* nothing to do */
+    BufferManager& bfm = Kernel::Instance().GetBufferManager();
+    User& u = Kernel::Instance().GetUser();
+
+    bfm.Bflush(DiskDriver::ROOTDEV);    // 将缓存刷如磁盘
+    g_InodeTable.UpdateInodeTable();        // 同步inode
 }
 
 /*
@@ -93,14 +103,17 @@ int SecondFS::prompt()
         return SecondFS::Lseek;
     else if(command == "close")
         return SecondFS::Close;
-    else if(command == "mkdir")
+    else if(command == "mkdir") {
+        this->mkdir(argv[1]);
         return SecondFS::Mkdir;
-    else if (command == "ls") {
+    } else if (command == "ls") {
         this->ls();
         return SecondFS::Ls;
     } else if (command == "cd") {
         this->cd(argv[1]);
         return SecondFS::Cd;
+    } else if (command == "exit"){
+        return SecondFS::Exit;
     } else
         cout << "Command " << command << " not found" << endl;
 
@@ -129,8 +142,59 @@ vector<string> SecondFS::split(const string& s, const string& c)
 
 
 /* command */
-void SecondFS::mkdir()
+void SecondFS::mkdir(std::string dir)
 {
+    User& u = Kernel::Instance().GetUser();
+    FileManager& fm = Kernel::Instance().GetFileManager();
+    Inode* pInode = NULL;
+	unsigned int newACCMode = (Inode::IFDIR|Inode::IRWXU|Inode::IRWXG|Inode::IRWXO); // 777
+    
+    char* pstr= new(nothrow) char[dir.length() + 1];
+    strcpy(pstr, dir.c_str());
+    u.u_dirp = pstr;    
+    u.u_arg[0] = (long long)pstr;
+    u.u_error = User::MYNOERROR;
+    
+    pInode = fm.NameI(fm.NextChar, FileManager::CREATE);
+    if ( NULL == pInode )
+    {
+        if(u.u_error)
+		{
+            cerr << "Error code: " << hex << u.u_error << endl;
+	        cout.unsetf(ios::hex);
+            return;
+        }
+		/* 创建Inode */
+		pInode = fm.MakNode( newACCMode & (~Inode::ISVTX) );
+
+	    // 解锁inode
+        pInode->Prele();
+        /* 创建失败 */
+        if ( NULL == pInode )
+		{
+			std::cerr << "Creat Inode Error" << std::endl;
+			return;
+		}
+        else
+        {
+            // 写目录文件 初始的两个目录项
+            DirectoryEntry dent[2];
+            dent[0].m_ino = pInode->i_number;
+            strcpy(dent[0].m_name, ".");
+            dent[1].m_ino = u.u_pdir->i_number;
+            strcpy(dent[1].m_name, "..");
+            u.u_IOParam.m_Base = (unsigned char*)dent; // 写入内容地址
+            u.u_IOParam.m_Count = sizeof(dent);    // 写入字节数
+            u.u_IOParam.m_Offset = 0;   // 写入偏移位置
+            pInode->WriteI();
+        }
+    }
+    else
+    {
+        cout << "mkdir: cannot create directory \'" << dir << "\': File exists";
+    }
+
+    delete pstr;
     return;
 }
 
@@ -215,9 +279,9 @@ void SecondFS::cd(string dir)
     if(u.u_error)
     {
         if(u.u_error == User::MYENOTDIR)
-            cerr << "cd: not a directory:" << dir << endl;
+            cerr << "cd: not a directory: " << dir << endl;
         else if(u.u_error == User::MYENOENT)
-            cerr << "cd: no such file or directory:" << dir << endl;
+            cerr << "cd: no such file or directory: " << dir << endl;
     }
 
     delete pstr;

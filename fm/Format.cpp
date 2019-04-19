@@ -124,7 +124,7 @@ void Format::InitBitmap()
      * 注意为小字序
      */
     char ione[2] = {0x3F, 0x00}; // inodemap预分配6bit
-    char done[2] = {0x3F, 0x00}; // datamap预分配6bit
+    char done[2] = {0x1F, 0x00}; // datamap预分配5bit
     char zero[4094] = {0};
     
     // lseek(f_fd, FileSystem::BLOCK_SIZE, SEEK_SET);
@@ -203,7 +203,7 @@ void Format::InitDiskInode()
 
 void Format::InitData()
 {
-    // 对0, 1 ~ 5号数据盘块写入目录文件
+    // 对0 ~ 5号数据盘块写入目录文件
     // datazone 初始盘块号
     int dstart = f_dsize - f_dzone_size;
     DirItem root[6] = {

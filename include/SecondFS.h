@@ -32,7 +32,8 @@ public:
         Close,
         Mkdir,
         Ls,
-        Cd
+        Cd,
+        Exit
     };
 
 public:
@@ -49,7 +50,7 @@ public:
     void write();
     void lseek();
     void close();
-    void mkdir();
+    void mkdir(std::string dir);
     void ls();
     void cd(std::string dir);
 };

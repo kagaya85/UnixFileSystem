@@ -98,6 +98,19 @@ int DiskDriver::WriteToDisk(Buf* bp)
 {
     unsigned char* b_addr = bp->b_addr;
     int bln = bp->b_blkno;
+    int ret;
     lseek(d_diskfileFd, bln * Constant::BLOCK_SIZE, SEEK_SET);
-    write(d_diskfileFd, b_addr, Constant::BLOCK_SIZE);
+    if((ret = write(d_diskfileFd, b_addr, Constant::BLOCK_SIZE)) < Constant::BLOCK_SIZE)
+    {
+        cerr << "Write Block " << bln << " to Disk Error." << endl;
+        perror("Error");
+        exit(-1);
+    }
+    else
+    {
+#ifdef DEBUG
+		std::cout << "Block " << bp->b_dev << ':' << bln << " Write " << ret << " Bytes to Disk." << std::endl;
+#endif
+    }
+    
 }

@@ -192,7 +192,6 @@ Inode* FileSystem::IAlloc(short dev)
 
 	/* 获取相应设备的SuperBlock内存副本 */
 	sb = this->GetFS(dev);
-
 	/* 
 	 * 上面部分已经保证，除非系统中没有可用外存Inode，
 	 * 否则空闲Inode索引表中必定会记录可用外存Inode的编号。
@@ -203,7 +202,7 @@ Inode* FileSystem::IAlloc(short dev)
 		ino = this->AllocFreeBit(this->m_Mount[0].ib_addr);
 		if(ino <= 0)
 		{
-			std::cerr << "inode alloc error" << std::endl;
+			std::cerr << "Inode alloc error" << std::endl;
 			exit(-1);
 		}
 		/* 将空闲Inode读入内存 */
@@ -279,7 +278,7 @@ Buf* FileSystem::Alloc(short dev)
 	}
 
 	/* 从bitmap获取空闲磁盘块编号 */
-	blkno = AllocFreeBit(this->m_Mount[0].db_addr);
+	blkno = sb->s_dstart + AllocFreeBit(this->m_Mount[0].db_addr);
 	/* 
 	 * 若获取磁盘块编号小于0，则表示已分配尽所有的空闲磁盘块。
 	 * 或者分配到的空闲磁盘块编号不属于数据盘块区域中(由BadBlock()检查)，
@@ -449,12 +448,18 @@ int FileSystem::AllocFreeBit(unsigned char* bitmap)
 	if(j == sizeof(long long))
 		return -1;
 
+	cin.unsetf(ios::hex);
 	int offset = 0;
 
-	for(offset = 0; offset < sizeof(char); offset++)
+	for(offset = 0; offset < 8; offset++)
 	{
-		if((*p & (1 << offset)) == 0)
-			return j * 8 * 8 + i * 8 + offset;
+		if(((*p) & (1 << offset)) == 0){
+			int num = j * 8 * 8 + i * 8 + offset;
+#ifdef DEBUG
+			cout << "Alloc free bit num: " << num << endl;
+#endif
+			return num;
+		}
 	}
 
 	std::cerr << "Alloc free bit error" << std::endl;

@@ -35,11 +35,17 @@ This project mainly has two executable program:
   **Some details**
 
   * Block Size: 4096 Bytes
+
   * Super Block: 128 Bytes
+
   * Data Bitmap: 1 Block → 4 * 1024 * 8 Blocks → 128 MB，so this FS contains 128MB space at **Most**
+
   * Inode Bitmap: 1 Block → 4 * 1024 * 8 Inodes
+
   * Inode Space: 1 Block contains 64 Inodes and every 4 Blocks will allocate a Inode, so every megabyte of data will allocate a block of Inodes
+
   * Data Space: Rest of the Space 
+
   * Disk Size: 4096 Blocks (16M) at **Least** and 134217728 Blocks (128M) at **Most**
 
   
@@ -183,4 +189,6 @@ And good luck !!!
 > 2019年4月18日
 >
 > * cd命令实现
-> * 修复了切换目录是路径显示的问题
+> 
+> * 修复了切换目录时路径显示的问题
+

@@ -258,7 +258,6 @@ void BufferManager::Bflush(short dev)
 	 * 如果这里继续往下搜索，而不是重新开始搜索那么很可能在
 	 * 操作bfreelist队列的时候出现错误。
 	 */
-loop:
 	for(bp = this->bFreeList.av_forw; bp != &(this->bFreeList); bp = bp->av_forw)
 	{
 		/* 找出自由队列中所有延迟写的块 */
@@ -267,7 +266,9 @@ loop:
 			bp->b_flags |= Buf::B_ASYNC;
 			this->NotAvail(bp);
 			this->Bwrite(bp);
-			goto loop;
+#ifdef DEBUG
+			std::cout << "Flush Block " << bp->b_dev << ':' << bp->b_blkno << " to Disk." << std::endl;
+#endif
 		}
 	}
 	return;

@@ -40,8 +40,8 @@ SecondFS::SecondFS()
 	cout << "SecondFS Loading..." << endl;
 	Kernel::Instance().Initialize();	
 	Kernel::Instance().GetFileSystem().LoadSuperBlock();
-	Kernel::Instance().GetFileSystem().LoadBimap(DiskDriver::DATA_BITMAP_BLOCK);
-	Kernel::Instance().GetFileSystem().LoadBimap(DiskDriver::INODE_BITMAP_BLOCK);
+	Kernel::Instance().GetFileSystem().LoadBitmap(DiskDriver::DATA_BITMAP_BLOCK);
+	Kernel::Instance().GetFileSystem().LoadBitmap(DiskDriver::INODE_BITMAP_BLOCK);
     cout << "SecondFS Loaded......OK." << endl;
 	/*  初始化rootDirInode和用户当前工作目录，以便NameI()正常工作 */
 	FileManager& fileMgr = Kernel::Instance().GetFileManager();
@@ -140,14 +140,89 @@ vector<string> SecondFS::split(const string& s, const string& c)
     return v;
 }
 
-
 /* command */
+
+void SecondFS::creat(string filename)
+{
+    User& u = Kernel::Instance().GetUser();
+    FileManager& fm = Kernel::Instance().GetFileManager();
+
+    char* pstr= new(nothrow) char[filename.length() + 1];
+    strcpy(pstr, filename.c_str());
+    u.u_dirp = pstr;    
+    u.u_arg[0] = (long long)pstr;   // 文件名字符串读写指针
+    u.u_arg[1] = Inode::IRWXU | Inode::IRWXG;   // 770
+    u.u_error = User::MYNOERROR;
+
+    fm.Creat();
+
+    if (u.u_error)
+    {
+        cerr << "Creat file failed." << endl;
+    }
+    else
+    {
+        cout << "Creat file success: fd = " << u.u_ar0[User::EAX] << endl;
+    }
+    return;
+}
+
+void SecondFS::open(string filename, int mode)
+{
+    User& u = Kernel::Instance().GetUser();
+    FileManager& fm = Kernel::Instance().GetFileManager();
+    Inode* pInode = NULL;
+    
+    char* pstr= new(nothrow) char[filename.length() + 1];
+    strcpy(pstr, filename.c_str());
+    u.u_dirp = pstr;    
+    u.u_arg[0] = (long long)pstr;   // 文件名字符串读写指针
+    u.u_arg[1] = mode;  // 打开mode
+    u.u_error = User::MYNOERROR;
+
+    fm.Open();
+
+    if (u.u_error)
+    {
+        cerr << "Open file failed." << endl;
+    }
+    else
+    {
+        cout << "Open file success: fd = " << u.u_ar0[User::EAX] << endl;
+    }
+    return;
+}
+
+void SecondFS::read()
+{
+    User& u = Kernel::Instance().GetUser();
+    FileManager& fm = Kernel::Instance().GetFileManager();
+}
+
+void SecondFS::write()
+{
+    User& u = Kernel::Instance().GetUser();
+    FileManager& fm = Kernel::Instance().GetFileManager();
+}   
+
+void SecondFS::lseek()
+{
+    User& u = Kernel::Instance().GetUser();
+    FileManager& fm = Kernel::Instance().GetFileManager();
+}
+
+void SecondFS::close()
+{
+    User& u = Kernel::Instance().GetUser();
+    FileManager& fm = Kernel::Instance().GetFileManager();
+}   
+
 void SecondFS::mkdir(std::string dir)
 {
     User& u = Kernel::Instance().GetUser();
     FileManager& fm = Kernel::Instance().GetFileManager();
     Inode* pInode = NULL;
-	unsigned int newACCMode = (Inode::IFDIR|Inode::IRWXU|Inode::IRWXG|Inode::IRWXO); // 777
+	unsigned int newACCMode = Inode::IFDIR | (Inode::IRWXU|Inode::IRWXG); // 770
     
     char* pstr= new(nothrow) char[dir.length() + 1];
     strcpy(pstr, dir.c_str());

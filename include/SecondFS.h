@@ -44,8 +44,8 @@ public:
     std::vector<std::string> split(const std::string& s, const std::string& c);
 
     /* command */
-    void creat();
-    void open();
+    void creat(std::string filename);
+    void open(std::string filename, int mode);
     void read();
     void write();
     void lseek();

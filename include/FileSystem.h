@@ -107,7 +107,7 @@ public:
 	/**
 	 * 读入bitmap到缓存
 	 */
-	unsigned char* LoadBimap(int bmp);
+	unsigned char* LoadBitmap(int bmp);
 
 	/**
 	 * 找到第一个为0得bit位，置1，返回块号，失败返回-1

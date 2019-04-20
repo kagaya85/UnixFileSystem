@@ -379,7 +379,7 @@ void FileSystem::SaveBitmap(int type)
 	
 }
 
-unsigned char* FileSystem::LoadBimap(int type)
+unsigned char* FileSystem::LoadBitmap(int type)
 {
 	DiskDriver& driver = Kernel::Instance().GetDiskDriver();
 	Buf tmp;

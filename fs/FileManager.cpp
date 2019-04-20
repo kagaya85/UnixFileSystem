@@ -5,6 +5,9 @@
 
 /*  定义内存Inode表的实例 */
 InodeTable g_InodeTable;
+/* 全局对象g_OpenFileTable */
+OpenFileTable g_OpenFileTable;
+
 /*==========================class FileManager===============================*/
 FileManager::FileManager()
 {
@@ -23,6 +26,8 @@ void FileManager::Initialize()
 	this->m_InodeTable = &g_InodeTable;
 
 	this->m_InodeTable->Initialize();
+
+	this->m_OpenFileTable = &g_OpenFileTable;
 }
 
 /*
@@ -153,7 +158,7 @@ void FileManager::Open1(Inode* pInode, int mode, int trf)
 	pFile->f_inode = pInode;
 
 	/* 特殊设备打开函数 */
-	pInode->OpenI(mode & File::FWRITE);
+	// pInode->OpenI(mode & File::FWRITE);
 
 	/* 为打开或者创建文件的各种资源都已成功分配，函数返回 */
 	if ( u.u_error == 0 )
@@ -1041,7 +1046,7 @@ OpenFileTable::~OpenFileTable()
 {
 	//nothing to do here
 }
-/*作用：进程打开文件描述符表中找的空闲项  之 下标  写入 u_ar0[EAX]*/
+/*作用：进程打开文件描述符表中找的空闲项之下标写入 u_ar0[EAX]*/
 File* OpenFileTable::FAlloc()
 {
 	int fd;

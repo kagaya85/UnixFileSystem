@@ -11,6 +11,11 @@ User::User()
 	u_cstime = 0;
 }
 
+void User::Initialize()
+{
+	
+}
+
 void User::Setuid()
 {
 	short uid = this->u_arg[0];

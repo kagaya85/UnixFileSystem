@@ -11,7 +11,12 @@
 #include "SecondFS.h"
 #include "Kernel.h"
 #include <iostream>
-
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <errno.h>
 
 using namespace std;
 
@@ -66,7 +71,8 @@ SecondFS::~SecondFS()
     BufferManager& bfm = Kernel::Instance().GetBufferManager();
     User& u = Kernel::Instance().GetUser();
     FileManager& fm = Kernel::Instance().GetFileManager();
-
+    Kernel::Instance().GetFileSystem().SaveBitmap(DiskDriver::DATA_BITMAP_BLOCK);
+    Kernel::Instance().GetFileSystem().SaveBitmap(DiskDriver::INODE_BITMAP_BLOCK);
     bfm.Bflush(DiskDriver::ROOTDEV);    // 将缓存刷如磁盘
     g_InodeTable.UpdateInodeTable();        // 同步inode
     // 关闭所有文件
@@ -101,13 +107,13 @@ int SecondFS::prompt()
     command = argv[0];
 
     if (command == "creat") {
-        this->creat(argv[1]);
+        this->MyCreat(argv[1]);
         return SecondFS::Creat;
     } else if (command == "open") {
         int mode = 0;
         mode = File::FREAD | File::FWRITE;  // 读写打开
         
-        this->open(argv[1], mode);
+        this->MyOpen(argv[1], mode);
         return SecondFS::Open;
     } else if (command == "read") {
         int fd = atoi(argv[1].c_str());
@@ -117,7 +123,7 @@ int SecondFS::prompt()
             cerr << "fd error." << endl;
         }
 
-        this->read(fd, count);
+        this->MyRead(fd, count);
         return SecondFS::Read;
     } else if (command == "write") {
         int fd = atoi(argv[1].c_str());
@@ -127,7 +133,7 @@ int SecondFS::prompt()
             cerr << "fd error." << endl;
         }
 
-        this->write(fd, count, argv[2]);
+        this->MyWrite(fd, count, argv[2]);
         return SecondFS::Write;
     } else if (command == "lseek") {
         int fd = atoi(argv[1].c_str());
@@ -138,30 +144,33 @@ int SecondFS::prompt()
             cerr << "fd error." << endl;
         }
         
-        this->lseek(fd, offset, mode);
+        this->MyLseek(fd, offset, mode);
         return SecondFS::Lseek;
     } else if (command == "close") {
         int fd = atoi(argv[1].c_str());
 
-        this->close(fd);
+        this->MyClose(fd);
         return SecondFS::Close;
     } else if (command == "mkdir") {
-        this->mkdir(argv[1]);
+        this->MyMkdir(argv[1]);
         return SecondFS::Mkdir;
     } else if (command == "ls") {
-        this->ls();
+        this->MyLs();
         return SecondFS::Ls;
     } else if (command == "cd") {
-        this->cd(argv[1]);
+        this->MyCd(argv[1]);
         return SecondFS::Cd;
     } else if (command == "exit"){
         return SecondFS::Exit;
     } else if (command == "help"){
-        this->help();
+        this->MyHelp();
         return SecondFS::Help;
-    } else {
+    } else if (command == "load"){
+        this->MyLoad(argv[1]);
+        return SecondFS::Load;
+    } else{
         cout << "Command " << command << " not found" << endl;
-        this->help();
+        this->MyHelp();
     }
 
     return -1;    
@@ -189,7 +198,7 @@ vector<string> SecondFS::split(const string& s, const string& c)
 
 /* command */
 
-void SecondFS::creat(string filename)
+int SecondFS::MyCreat(string filename)
 {
     User& u = Kernel::Instance().GetUser();
     FileManager& fm = Kernel::Instance().GetFileManager();
@@ -211,10 +220,10 @@ void SecondFS::creat(string filename)
     {
         cout << "Creat file success: fd = " << u.u_ar0[User::EAX] << endl;
     }
-    return;
+    return u.u_ar0[User::EAX];
 }
 
-void SecondFS::open(string filename, int mode)
+void SecondFS::MyOpen(string filename, int mode)
 {
     User& u = Kernel::Instance().GetUser();
     FileManager& fm = Kernel::Instance().GetFileManager();
@@ -240,7 +249,7 @@ void SecondFS::open(string filename, int mode)
     return;
 }
 
-void SecondFS::read(int fd, int count)
+void SecondFS::MyRead(int fd, int count)
 {
     User& u = Kernel::Instance().GetUser();
     FileManager& fm = Kernel::Instance().GetFileManager();
@@ -267,7 +276,7 @@ void SecondFS::read(int fd, int count)
     return;
 }
 
-void SecondFS::write(int fd, int count, string text)
+void SecondFS::MyWrite(int fd, int count, string text)
 {
     User& u = Kernel::Instance().GetUser();
     FileManager& fm = Kernel::Instance().GetFileManager();
@@ -293,10 +302,11 @@ void SecondFS::write(int fd, int count, string text)
 	File* pFile = u.u_ofiles.GetF(fd);	/* fd */
     cout << "File f_offset: " << pFile->f_offset << endl;
 #endif
+    Kernel::Instance().GetFileSystem().SaveBitmap(DiskDriver::DATA_BITMAP_BLOCK);
     return;
 }   
 
-void SecondFS::lseek(int fd, int offset, int mode)
+void SecondFS::MyLseek(int fd, int offset, int mode)
 {
     User& u = Kernel::Instance().GetUser();
     FileManager& fm = Kernel::Instance().GetFileManager();
@@ -322,7 +332,7 @@ void SecondFS::lseek(int fd, int offset, int mode)
     return;
 }
 
-void SecondFS::close(int fd)
+void SecondFS::MyClose(int fd)
 {
     User& u = Kernel::Instance().GetUser();
     FileManager& fm = Kernel::Instance().GetFileManager();
@@ -342,7 +352,7 @@ void SecondFS::close(int fd)
     return;
 }   
 
-void SecondFS::mkdir(std::string dir)
+void SecondFS::MyMkdir(std::string dir)
 {
     User& u = Kernel::Instance().GetUser();
     FileManager& fm = Kernel::Instance().GetFileManager();
@@ -394,10 +404,12 @@ void SecondFS::mkdir(std::string dir)
     }
 
     delete pstr;
+    Kernel::Instance().GetFileSystem().SaveBitmap(DiskDriver::DATA_BITMAP_BLOCK);
+    Kernel::Instance().GetFileSystem().SaveBitmap(DiskDriver::INODE_BITMAP_BLOCK);
     return;
 }
 
-void SecondFS::ls()
+void SecondFS::MyLs()
 {
 	User& u = Kernel::Instance().GetUser();
 	BufferManager& bufMgr = Kernel::Instance().GetBufferManager();
@@ -464,7 +476,7 @@ void SecondFS::ls()
     return;
 }
 
-void SecondFS::cd(string dir)
+void SecondFS::MyCd(string dir)
 {
     User& u = Kernel::Instance().GetUser();
     FileManager& fm = Kernel::Instance().GetFileManager();
@@ -487,7 +499,57 @@ void SecondFS::cd(string dir)
     return;
 }
 
-void SecondFS::help()
+void SecondFS::MyLoad(string filename)
+{
+    struct stat fileStat;
+    User& u = Kernel::Instance().GetUser();
+    FileManager& fm = Kernel::Instance().GetFileManager();
+    unsigned char buf[1024] = {0};
+    int fd1, fd2, count;
+
+    fd1 = open(filename.c_str(), O_RDONLY);
+    if(fd1 < 0){
+        perror("Read File Error");
+        return;
+    }
+    std::vector<std::string> v = split(filename, "/");
+    stat(filename.c_str(), &fileStat);
+    filename = v[v.size() - 1];
+    fd2 = MyCreat(filename);
+
+    int remainSize = fileStat.st_size;
+    while(true)
+    {
+        count = read(fd1, buf, 1024);
+        if(count <= 0)
+            break;
+
+        remainSize -= count;
+        u.u_arg[0] = fd2;
+        u.u_arg[1] = (long long)buf;    // 目标缓冲区
+        u.u_arg[2] = count; // 读写字节数
+        u.u_error = User::MYNOERROR;
+
+        fm.Write();
+        if (u.u_error)
+        {
+            cerr << "Write file error ErrorCode: " << u.u_error << endl;
+        }
+        else
+        {
+            cout << "Write file success." << endl;
+        }
+        if(count < 1024)
+            break;
+    }
+    MyClose(fd2);
+    close(fd1);
+    cout << "Load File End." << endl;
+    Kernel::Instance().GetFileSystem().SaveBitmap(DiskDriver::DATA_BITMAP_BLOCK);
+    return;
+}
+
+void SecondFS::MyHelp()
 {
     cout << "=============SecondFileSystem================" << endl;
     cout << "| creat filename                            |" << endl;
@@ -499,6 +561,7 @@ void SecondFS::help()
     cout << "| mkdir dirname                             |" << endl;
     cout << "| ls                                        |" << endl;
     cout << "| cd path                                   |" << endl;
+    cout << "| load filePath(external path)              |" << endl;
     cout << "| help                                      |" << endl;
     cout << "=============================================" << endl;
 }

@@ -359,13 +359,15 @@ void FileSystem::SaveBitmap(int type)
 {
 	DiskDriver& driver = Kernel::Instance().GetDiskDriver();
 	Buf tmp;
+	tmp.b_dev = 0;
 	if(type == DiskDriver::INODE_BITMAP_BLOCK)
 	{
+		tmp.b_dev = 0;
 		tmp.b_addr = this->m_Mount[0].ib_addr;
 		tmp.b_blkno = DiskDriver::INODE_BITMAP_BLOCK;
 		driver.WriteToDisk(&tmp);
 	}
-	else if(type == DiskDriver::INODE_BITMAP_BLOCK)
+	else if(type == DiskDriver::DATA_BITMAP_BLOCK)
 	{
 		tmp.b_addr = this->m_Mount[0].db_addr;
 		tmp.b_blkno = DiskDriver::DATA_BITMAP_BLOCK;
@@ -441,7 +443,7 @@ int FileSystem::AllocFreeBit(unsigned char* bitmap)
 	p = (unsigned char*)lp;
 	for(j = 0; i < sizeof(long long); j++, p++)
 	{
-		if(~(*p) != 0)
+		if((unsigned char)~(*p) != (unsigned char)0)	// 防止被强制转为int
 			break;
 	}
 

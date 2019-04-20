@@ -34,6 +34,7 @@ public:
         Ls,
         Cd,
         Help,
+        Load,
         Exit
     };
 
@@ -45,16 +46,17 @@ public:
     std::vector<std::string> split(const std::string& s, const std::string& c);
 
     /* command */
-    void creat(std::string filename);
-    void open(std::string filename, int mode);
-    void read(int fd, int count);
-    void write(int fd, int count, std::string text);
-    void lseek(int fd, int offset, int mode);
-    void close(int fd);
-    void mkdir(std::string dir);
-    void ls();
-    void cd(std::string dir);
-    void help();
+    int MyCreat(std::string filename);
+    void MyOpen(std::string filename, int mode);
+    void MyRead(int fd, int count);
+    void MyWrite(int fd, int count, std::string text);
+    void MyLseek(int fd, int offset, int mode);
+    void MyClose(int fd);
+    void MyMkdir(std::string dir);
+    void MyLs();
+    void MyCd(std::string dir);
+    void MyLoad(std::string filename);
+    void MyHelp();
 };
 
 

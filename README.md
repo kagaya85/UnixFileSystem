@@ -67,16 +67,16 @@ This project mainly has two executable program:
 
   Supported system command:
 
-  - [ ] creat
-  - [ ] open
-  - [ ] read
-  - [ ] write
-  - [ ] lseek(seek)
-  - [ ] close
-  - [ ] mkdir
+  - [x] creat
+  - [x] open
+  - [x] read
+  - [x] write
+  - [x] lseek(seek)
+  - [x] close
+  - [x] mkdir
   - [x] cd
   - [x] ls
-  - [ ] help
+  - [x] help
 
 ## Structure
 

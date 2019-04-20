@@ -198,7 +198,7 @@ void SecondFS::creat(string filename)
     strcpy(pstr, filename.c_str());
     u.u_dirp = pstr;    
     u.u_arg[0] = (long long)pstr;   // 文件名字符串读写指针
-    u.u_arg[1] = Inode::IRWXU | Inode::IRWXG;   // 770
+    u.u_arg[1] = Inode::IRWXU | Inode::IRWXG | Inode::IRWXO;   // 777
     u.u_error = User::MYNOERROR;
 
     fm.Creat();
@@ -231,7 +231,7 @@ void SecondFS::open(string filename, int mode)
 
     if (u.u_error)
     {
-        cerr << "Open file failed." << endl;
+        cerr << "Open file failed ErrorCode: " << u.u_error << endl;
     }
     else
     {
@@ -254,12 +254,16 @@ void SecondFS::read(int fd, int count)
     fm.Read();
     if (u.u_error)
     {
-        cerr << "Read file error." << endl;
+        cerr << "Read file error ErrorCode: " << u.u_error << endl;
     }
     else
     {
         cout << "Read file success: " << endl << buf << endl;
     }
+#ifdef DEBUG
+	File* pFile = u.u_ofiles.GetF(fd);	/* fd */
+    cout << "File f_offset: " << pFile->f_offset << endl;
+#endif
     return;
 }
 
@@ -279,12 +283,16 @@ void SecondFS::write(int fd, int count, string text)
     fm.Write();
     if (u.u_error)
     {
-        cerr << "Write file error." << endl;
+        cerr << "Write file error ErrorCode: " << u.u_error << endl;
     }
     else
     {
         cout << "Write file success." << endl;
     }
+#ifdef DEBUG
+	File* pFile = u.u_ofiles.GetF(fd);	/* fd */
+    cout << "File f_offset: " << pFile->f_offset << endl;
+#endif
     return;
 }   
 
@@ -301,12 +309,16 @@ void SecondFS::lseek(int fd, int offset, int mode)
     fm.Seek();
     if (u.u_error)
     {
-        cerr << "Seek file error." << endl;
+        cerr << "Seek file error ErrorCode: " << u.u_error << endl;
     }
     else
     {
         cout << "Seek file success." << endl;
     }
+#ifdef DEBUG
+	File* pFile = u.u_ofiles.GetF(fd);	/* fd */
+    cout << "File f_offset: " << pFile->f_offset << endl;
+#endif
     return;
 }
 
@@ -321,7 +333,7 @@ void SecondFS::close(int fd)
     fm.Close();
     if (u.u_error)
     {
-        cerr << "Close file error." << endl;
+        cerr << "Close file error ErrorCode: " << u.u_error << endl;
     }
     else
     {
@@ -348,8 +360,7 @@ void SecondFS::mkdir(std::string dir)
     {
         if(u.u_error)
 		{
-            cerr << "Error code: " << hex << u.u_error << endl;
-	        cout.unsetf(ios::hex);
+            cerr << "Error code: " << u.u_error << endl;
             return;
         }
 		/* 创建Inode */
@@ -482,7 +493,7 @@ void SecondFS::help()
     cout << "| creat filename                            |" << endl;
     cout << "| open filename                             |" << endl;
     cout << "| read fd count(bytes num)                  |" << endl;
-    cout << "| write fd count(bytes num) text            |" << endl;
+    cout << "| write fd text                             |" << endl;
     cout << "| lseek fd offset mode(0-begin 1-cur 2-end) |" << endl;
     cout << "| close fd                                  |" << endl;
     cout << "| mkdir dirname                             |" << endl;

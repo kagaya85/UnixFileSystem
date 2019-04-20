@@ -49,7 +49,7 @@ void Inode::ReadI()
 	int nbytes;	/* 传送至用户目标区字节数量 */
 	short dev;
 	Buf* pBuf;
-	User u = Kernel::Instance().GetUser();
+	User& u = Kernel::Instance().GetUser();
 	BufferManager& bufMgr = Kernel::Instance().GetBufferManager();
 	DiskDriver& dskDvr = Kernel::Instance().GetDiskDriver();
 
@@ -76,32 +76,32 @@ void Inode::ReadI()
 		/* 传送到用户区的字节数量，取读请求的剩余字节数与当前字符块内有效字节数较小值 */
 		nbytes = Utility::Min(Inode::BLOCK_SIZE - offset /* 块内有效字节数 */, u.u_IOParam.m_Count);
 
-		if( (this->i_mode & Inode::IFMT) != Inode::IFBLK )
-		{	/* 如果不是特殊块设备文件 */
-		
-			int remain = this->i_size - u.u_IOParam.m_Offset;
-			/* 如果已读到超过文件结尾 */
-			if( remain <= 0)
-			{
-				return;
-			}
-			/* 传送的字节数量还取决于剩余文件的长度 */
-			nbytes = Utility::Min(nbytes, remain);
-
-			/* 将逻辑块号lbn转换成物理盘块号bn ，Bmap有设置Inode::rablock。当UNIX认为获取预读块的开销太大时，
-			 * 会放弃预读，此时 Inode::rablock 值为 0。
-			 * */
-			if( (bn = this->Bmap(lbn)) == 0 )
-			{
-				return;
-			}
-			dev = this->i_dev;
-		}
-		else	/* 如果是特殊块设备文件 */
+		// if( (this->i_mode & Inode::IFMT) != Inode::IFBLK )
+		// {	/* 如果不是特殊块设备文件 */
+	
+		int remain = this->i_size - u.u_IOParam.m_Offset;
+		/* 如果已读到超过文件结尾 */
+		if( remain <= 0)
 		{
-			dev = this->i_addr[0];	/* 特殊块设备文件i_addr[0]中存放的是设备号 */
-			// Inode::rablock = bn + 1;
+			return;
 		}
+		/* 传送的字节数量还取决于剩余文件的长度 */
+		nbytes = Utility::Min(nbytes, remain);
+
+		/* 将逻辑块号lbn转换成物理盘块号bn ，Bmap有设置Inode::rablock。当UNIX认为获取预读块的开销太大时，
+			* 会放弃预读，此时 Inode::rablock 值为 0。
+			* */
+		if( (bn = this->Bmap(lbn)) == 0 )
+		{
+			return;
+		}
+		dev = this->i_dev;
+		// }
+		// else	/* 如果是特殊块设备文件 */
+		// {
+		// 	dev = this->i_addr[0];	/* 特殊块设备文件i_addr[0]中存放的是设备号 */
+		// 	// Inode::rablock = bn + 1;
+		// }
 
 		pBuf = bufMgr.Bread(dev, bn);
 		/* 记录最近读取字符块的逻辑块号 */
@@ -114,7 +114,6 @@ void Inode::ReadI()
 		 * i386芯片用同一张页表映射用户空间和内核空间，这一点硬件上的差异 使得i386上实现 iomove操作
 		 * 比PDP-11要容易许多*/
 		Utility::IOMove(start, u.u_IOParam.m_Base, nbytes);
-
 		/* 用传送字节数nbytes更新读写位置 */
 		u.u_IOParam.m_Base += nbytes;
 		u.u_IOParam.m_Offset += nbytes;
@@ -176,6 +175,10 @@ void Inode::WriteI()
 			dev = this->i_addr[0];
 		}
 
+#ifdef DEBUG
+		cout << "Start write Inode " << dev << ':' << this->i_number << " -> Block " << lbn << ' ' << dev << ':' << bn << endl;
+#endif
+
 		if(Inode::BLOCK_SIZE == nbytes)
 		{
 			/* 如果写入数据正好满一个字符块，则为其分配缓存 */
@@ -216,6 +219,11 @@ void Inode::WriteI()
 		{
 			this->i_size = u.u_IOParam.m_Offset;
 		}
+
+#ifdef DEBUG
+		cout << "Inode " << dev << ':' << this->i_number << " update." << endl;
+		this->IInfo();
+#endif
 
 		/* 
 		 * 之前过程中读盘可能导致进程切换，在进程睡眠期间当前内存Inode可能

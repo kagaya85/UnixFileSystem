@@ -448,13 +448,12 @@ int FileSystem::AllocFreeBit(unsigned char* bitmap)
 	if(j == sizeof(long long))
 		return -1;
 
-	cin.unsetf(ios::hex);
 	int offset = 0;
-
 	for(offset = 0; offset < 8; offset++)
 	{
 		if(((*p) & (1 << offset)) == 0){
 			int num = j * 8 * 8 + i * 8 + offset;
+			(*p) |= (1 << offset);	// 置1
 #ifdef DEBUG
 			cout << "Alloc free bit num: " << num << endl;
 #endif
@@ -614,6 +613,9 @@ Inode* InodeTable::IGet(short dev, int inumber)
  * */
 void InodeTable::IPut(Inode *pNode)
 {
+#ifdef DEBUG
+	cout << "Put Inode " << pNode->i_dev << ':' << pNode->i_number << endl;
+#endif
 	/* 当前进程为引用该内存Inode的唯一进程，且准备释放该内存Inode */
 	if(pNode->i_count == 1)
 	{
@@ -647,6 +649,7 @@ void InodeTable::IPut(Inode *pNode)
 	/* 减少内存Inode的引用计数，唤醒等待进程 */
 	pNode->i_count--;
 	pNode->Prele();
+
 }
 
 void InodeTable::UpdateInodeTable()

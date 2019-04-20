@@ -79,7 +79,7 @@ void FileManager::Creat()
 		 * 不需要进行权限检查，因为刚刚建立的文件的权限和传入参数mode
 		 * 所表示的权限内容是一样的。
 		 */
-		this->Open1(pInode, File::FWRITE, 2);
+		this->Open1(pInode, (File::FREAD | File::FWRITE), 2);
 	}
 	else
 	{
@@ -88,7 +88,7 @@ void FileManager::Creat()
 		 * 也就是说creat指定的RWX比特无效。
 		 * 邓蓉认为这是不合理的，应该改变。
 		 * 现在的实现：creat指定的RWX比特有效 */
-		this->Open1(pInode, File::FWRITE, 1);
+		this->Open1(pInode, (File::FREAD | File::FWRITE), 1);
 		pInode->i_mode |= newACCMode;
 	}
 }
@@ -138,7 +138,6 @@ void FileManager::Open1(Inode* pInode, int mode, int trf)
 	{
 		pInode->ITrunc();
 	}
-
 	/* 解锁inode! 
 	 * 线性目录搜索涉及大量的磁盘读写操作，期间进程会入睡。
 	 * 因此，进程必须上锁操作涉及的i节点。这就是NameI中执行的IGet上锁操作。
@@ -153,6 +152,7 @@ void FileManager::Open1(Inode* pInode, int mode, int trf)
 		this->m_InodeTable->IPut(pInode);
 		return;
 	}
+	
 	/* 设置打开文件方式，建立File结构和内存Inode的勾连关系 */
 	pFile->f_flag = mode & (File::FREAD | File::FWRITE);
 	pFile->f_inode = pInode;
@@ -338,6 +338,7 @@ void FileManager::Rdwr( enum File::FileFlags mode )
 	/* 读写的模式不正确 */
 	if ( (pFile->f_flag & mode) == 0 )
 	{
+		std::cout << pFile->f_flag << ' ' << mode << std::endl;
 		u.u_error = User::MYEACCES;
 		return;
 	}
@@ -393,7 +394,6 @@ Inode* FileManager::NameI( char (*func)(), enum DirectorySearchMode mode )
 
 	/* 检查该Inode是否正在被使用，以及保证在整个目录搜索过程中该Inode不被释放 */
 	this->m_InodeTable->IGet(pInode->i_dev, pInode->i_number);
-
 	/* 允许出现////a//b 这种路径 这种路径等价于/a/b */
 	while ( '/' == curchar )
 	{

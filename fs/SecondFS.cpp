@@ -65,9 +65,18 @@ SecondFS::~SecondFS()
 {
     BufferManager& bfm = Kernel::Instance().GetBufferManager();
     User& u = Kernel::Instance().GetUser();
+    FileManager& fm = Kernel::Instance().GetFileManager();
 
     bfm.Bflush(DiskDriver::ROOTDEV);    // 将缓存刷如磁盘
     g_InodeTable.UpdateInodeTable();        // 同步inode
+    // 关闭所有文件
+    for(int i = 0; i < OpenFiles::NOFILES; i++)
+    {
+        u.u_arg[0] = i;
+        u.u_error = User::MYNOERROR;
+
+        fm.Close();
+    }
 }
 
 /*
@@ -90,20 +99,53 @@ int SecondFS::prompt()
         
     argv = split(line, ch);
     command = argv[0];
-    
-    if(command == "creat")
+
+    if (command == "creat") {
+        this->creat(argv[1]);
         return SecondFS::Creat;
-    else if(command == "open")
+    } else if (command == "open") {
+        int mode = 0;
+        mode = File::FREAD | File::FWRITE;  // 读写打开
+        
+        this->open(argv[1], mode);
         return SecondFS::Open;
-    else if(command == "read")
+    } else if (command == "read") {
+        int fd = atoi(argv[1].c_str());
+        int count = atoi(argv[2].c_str());
+        
+        if (fd <= 0 && argv[1] != "0") {
+            cerr << "fd error." << endl;
+        }
+
+        this->read(fd, count);
         return SecondFS::Read;
-    else if(command == "write")
+    } else if (command == "write") {
+        int fd = atoi(argv[1].c_str());
+        int count = argv[2].length();   // 不写入 \0
+        
+        if (fd <= 0 && argv[1] != "0") {
+            cerr << "fd error." << endl;
+        }
+
+        this->write(fd, count, argv[2]);
         return SecondFS::Write;
-    else if(command == "lseek")
+    } else if (command == "lseek") {
+        int fd = atoi(argv[1].c_str());
+        int offset = atoi(argv[2].c_str());
+        int mode = atoi(argv[3].c_str());
+        
+        if (fd <= 0 && argv[1] != "0") {
+            cerr << "fd error." << endl;
+        }
+        
+        this->lseek(fd, offset, mode);
         return SecondFS::Lseek;
-    else if(command == "close")
+    } else if (command == "close") {
+        int fd = atoi(argv[1].c_str());
+
+        this->close(fd);
         return SecondFS::Close;
-    else if(command == "mkdir") {
+    } else if (command == "mkdir") {
         this->mkdir(argv[1]);
         return SecondFS::Mkdir;
     } else if (command == "ls") {
@@ -114,8 +156,13 @@ int SecondFS::prompt()
         return SecondFS::Cd;
     } else if (command == "exit"){
         return SecondFS::Exit;
-    } else
+    } else if (command == "help"){
+        this->help();
+        return SecondFS::Help;
+    } else {
         cout << "Command " << command << " not found" << endl;
+        this->help();
+    }
 
     return -1;    
 }
@@ -193,28 +240,94 @@ void SecondFS::open(string filename, int mode)
     return;
 }
 
-void SecondFS::read()
+void SecondFS::read(int fd, int count)
 {
     User& u = Kernel::Instance().GetUser();
     FileManager& fm = Kernel::Instance().GetFileManager();
+    unsigned char buf[1024] = {0};
+
+    u.u_arg[0] = fd;
+    u.u_arg[1] = (long long)buf;    // 目标缓冲区
+    u.u_arg[2] = count; // 读写字节数
+    u.u_error = User::MYNOERROR;
+
+    fm.Read();
+    if (u.u_error)
+    {
+        cerr << "Read file error." << endl;
+    }
+    else
+    {
+        cout << "Read file success: " << endl << buf << endl;
+    }
+    return;
 }
 
-void SecondFS::write()
+void SecondFS::write(int fd, int count, string text)
 {
     User& u = Kernel::Instance().GetUser();
     FileManager& fm = Kernel::Instance().GetFileManager();
+    unsigned char buf[1024] = {0};
+
+    memcpy(buf, text.c_str(), text.length());
+
+    u.u_arg[0] = fd;
+    u.u_arg[1] = (long long)buf;    // 目标缓冲区
+    u.u_arg[2] = count; // 读写字节数
+    u.u_error = User::MYNOERROR;
+
+    fm.Write();
+    if (u.u_error)
+    {
+        cerr << "Write file error." << endl;
+    }
+    else
+    {
+        cout << "Write file success." << endl;
+    }
+    return;
 }   
 
-void SecondFS::lseek()
+void SecondFS::lseek(int fd, int offset, int mode)
 {
     User& u = Kernel::Instance().GetUser();
     FileManager& fm = Kernel::Instance().GetFileManager();
+
+    u.u_arg[0] = fd;
+    u.u_arg[1] = offset;
+    u.u_arg[2] = mode; // 0-从文件开始 1-当前位置 2-文件末尾位置 
+    u.u_error = User::MYNOERROR;
+
+    fm.Seek();
+    if (u.u_error)
+    {
+        cerr << "Seek file error." << endl;
+    }
+    else
+    {
+        cout << "Seek file success." << endl;
+    }
+    return;
 }
 
-void SecondFS::close()
+void SecondFS::close(int fd)
 {
     User& u = Kernel::Instance().GetUser();
     FileManager& fm = Kernel::Instance().GetFileManager();
+
+    u.u_arg[0] = fd;
+    u.u_error = User::MYNOERROR;
+
+    fm.Close();
+    if (u.u_error)
+    {
+        cerr << "Close file error." << endl;
+    }
+    else
+    {
+        cout << "Close file success." << endl;
+    }
+    return;
 }   
 
 void SecondFS::mkdir(std::string dir)
@@ -361,4 +474,20 @@ void SecondFS::cd(string dir)
 
     delete pstr;
     return;
+}
+
+void SecondFS::help()
+{
+    cout << "=============SecondFileSystem================" << endl;
+    cout << "| creat filename                            |" << endl;
+    cout << "| open filename                             |" << endl;
+    cout << "| read fd count(bytes num)                  |" << endl;
+    cout << "| write fd count(bytes num) text            |" << endl;
+    cout << "| lseek fd offset mode(0-begin 1-cur 2-end) |" << endl;
+    cout << "| close fd                                  |" << endl;
+    cout << "| mkdir dirname                             |" << endl;
+    cout << "| ls                                        |" << endl;
+    cout << "| cd path                                   |" << endl;
+    cout << "| help                                      |" << endl;
+    cout << "=============================================" << endl;
 }

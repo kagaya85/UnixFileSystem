@@ -19,6 +19,8 @@ File::~File()
 /*==============================class OpenFiles===================================*/
 OpenFiles::OpenFiles()
 {
+	for(int i = 0; i < OpenFiles::NOFILES; i++)
+		this->ProcessOpenFileTable[i] = NULL;
 }
 
 OpenFiles::~OpenFiles()

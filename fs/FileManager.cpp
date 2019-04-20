@@ -1034,8 +1034,6 @@ void FileManager::MkNod()
 	this->m_InodeTable->IPut(pInode);
 }
 /*==============================class OpenFileTable===================================*/
-/* 系统全局打开文件表对象实例的定义 */
-OpenFileTable g_OpenFileTable;
 
 OpenFileTable::OpenFileTable()
 {

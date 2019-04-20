@@ -33,6 +33,7 @@ public:
         Mkdir,
         Ls,
         Cd,
+        Help,
         Exit
     };
 
@@ -46,13 +47,14 @@ public:
     /* command */
     void creat(std::string filename);
     void open(std::string filename, int mode);
-    void read();
-    void write();
-    void lseek();
-    void close();
+    void read(int fd, int count);
+    void write(int fd, int count, std::string text);
+    void lseek(int fd, int offset, int mode);
+    void close(int fd);
     void mkdir(std::string dir);
     void ls();
     void cd(std::string dir);
+    void help();
 };
 
 

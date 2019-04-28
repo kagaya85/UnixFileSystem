@@ -35,6 +35,7 @@ public:
         Cd,
         Help,
         Load,
+        Export,
         Exit
     };
 
@@ -47,8 +48,8 @@ public:
 
     /* command */
     int MyCreat(std::string filename);
-    void MyOpen(std::string filename, int mode);
-    void MyRead(int fd, int count);
+    int MyOpen(std::string filename, int mode);
+    int MyRead(int fd, unsigned char* buf, int count);
     void MyWrite(int fd, int count, std::string text);
     void MyLseek(int fd, int offset, int mode);
     void MyClose(int fd);
@@ -56,6 +57,7 @@ public:
     void MyLs();
     void MyCd(std::string dir);
     void MyLoad(std::string filename);
+    void MyExport(std::string dir);
     void MyHelp();
 };
 

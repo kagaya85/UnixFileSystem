@@ -81,7 +81,8 @@ loop:
 		if(bp->b_flags & Buf::B_BUSY)
 		{
 			std::cerr << "Block " << dev << ':' << blkno << " Busy." <<std::endl;
-			bp->b_flags |= Buf::B_WANTED;
+			//bp->b_flags |= Buf::B_WANTED;
+			bp->b_flags &= ~Buf::B_BUSY;
 			goto loop;
 		}
 		/* 从自由队列中抽取出来 */

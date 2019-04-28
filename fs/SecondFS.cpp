@@ -116,6 +116,7 @@ int SecondFS::prompt()
         this->MyOpen(argv[1], mode);
         return SecondFS::Open;
     } else if (command == "read") {
+        unsigned char buf[1024] = {0};
         int fd = atoi(argv[1].c_str());
         int count = atoi(argv[2].c_str());
         
@@ -123,7 +124,7 @@ int SecondFS::prompt()
             cerr << "fd error." << endl;
         }
 
-        this->MyRead(fd, count);
+        this->MyRead(fd, buf, count);
         return SecondFS::Read;
     } else if (command == "write") {
         int fd = atoi(argv[1].c_str());
@@ -168,6 +169,9 @@ int SecondFS::prompt()
     } else if (command == "load"){
         this->MyLoad(argv[1]);
         return SecondFS::Load;
+    } else if (command == "export") {
+        this->MyExport(argv[1]);
+        return SecondFS::Export;
     } else{
         cout << "Command " << command << " not found" << endl;
         this->MyHelp();
@@ -223,7 +227,7 @@ int SecondFS::MyCreat(string filename)
     return u.u_ar0[User::EAX];
 }
 
-void SecondFS::MyOpen(string filename, int mode)
+int SecondFS::MyOpen(string filename, int mode)
 {
     User& u = Kernel::Instance().GetUser();
     FileManager& fm = Kernel::Instance().GetFileManager();
@@ -241,19 +245,19 @@ void SecondFS::MyOpen(string filename, int mode)
     if (u.u_error)
     {
         cerr << "Open file failed ErrorCode: " << u.u_error << endl;
+        return -1;
     }
     else
     {
         cout << "Open file success: fd = " << u.u_ar0[User::EAX] << endl;
     }
-    return;
+    return u.u_ar0[User::EAX];
 }
 
-void SecondFS::MyRead(int fd, int count)
+int SecondFS::MyRead(int fd, unsigned char* buf, int count)
 {
     User& u = Kernel::Instance().GetUser();
     FileManager& fm = Kernel::Instance().GetFileManager();
-    unsigned char buf[1024] = {0};
 
     u.u_arg[0] = fd;
     u.u_arg[1] = (long long)buf;    // 目标缓冲区
@@ -267,13 +271,13 @@ void SecondFS::MyRead(int fd, int count)
     }
     else
     {
-        cout << "Read file success: " << endl << buf << endl;
+        cout << "Read file success " << endl;
     }
 #ifdef DEBUG
 	File* pFile = u.u_ofiles.GetF(fd);	/* fd */
     cout << "File f_offset: " << pFile->f_offset << endl;
 #endif
-    return;
+    return u.u_ar0[User::EAX];
 }
 
 void SecondFS::MyWrite(int fd, int count, string text)
@@ -508,7 +512,7 @@ void SecondFS::MyLoad(string filename)
     int fd1, fd2, count;
 
     fd1 = open(filename.c_str(), O_RDONLY);
-    if(fd1 < 0){
+    if(fd1 <= 0){
         perror("Read File Error");
         return;
     }
@@ -549,6 +553,58 @@ void SecondFS::MyLoad(string filename)
     return;
 }
 
+void SecondFS::MyExport(string dir)
+{
+    struct stat fileStat;
+    User& u = Kernel::Instance().GetUser();
+    FileManager& fm = Kernel::Instance().GetFileManager();
+    unsigned char buf[1024] = {0};
+    int fd1, fd2, count;
+
+    std::vector<std::string> v = split(dir, "/");
+    string filename = v[v.size() - 1];
+
+    fd1 = open(filename.c_str(), O_WRONLY | O_CREAT);
+    if(fd1 <= 0){
+        perror("Write File Error");
+        return;
+    }
+
+    fd2 = MyOpen(dir, File::FREAD);
+
+    File* fp = u.u_ofiles.GetF(fd2);
+
+    int remainSize = fp->f_inode->i_size;
+#ifdef DEBUG
+    if(remainSize >= 0)
+        cout << "Ready to export file " << filename << " , size " << remainSize << " Byte(s)." << endl;
+    else 
+        cout << "File size error: " << remainSize << " Byte(s)." << endl;
+#endif
+    while(remainSize > 0)
+    {
+        count = MyRead(fd2, buf, 1024);
+        if(count < 0)
+            break;
+
+        remainSize -= count;
+       
+        if (write(fd1, buf, count) < 0)
+        {
+            perror("Write file error ErrorCode");
+        }
+
+        if(count < 1024)
+            break;
+    }
+
+    MyClose(fd2);
+    close(fd1);
+    cout << "Export File End." << endl;
+    Kernel::Instance().GetFileSystem().SaveBitmap(DiskDriver::DATA_BITMAP_BLOCK);
+    return;
+}
+
 void SecondFS::MyHelp()
 {
     cout << "=============SecondFileSystem================" << endl;
@@ -562,6 +618,7 @@ void SecondFS::MyHelp()
     cout << "| ls                                        |" << endl;
     cout << "| cd path                                   |" << endl;
     cout << "| load filePath(external path)              |" << endl;
+    cout << "| export filename                           |" << endl;
     cout << "| help                                      |" << endl;
     cout << "=============================================" << endl;
 }
